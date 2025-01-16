@@ -51,12 +51,14 @@ public class Player_Input_Handler : NetworkBehaviour
         //Check to see if moving left or right
         if ((m_moveInput.x < 0 && m_isFacingRight) || (m_moveInput.x > 0 && !m_isFacingRight))
         {
-            FlipSprite();
+            FlipSpriteRpc();
         }
 
         m_RB.linearVelocity = m_moveInput * m_moveSpeed;
     }
-    void FlipSprite()
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void FlipSpriteRpc()
     {
         m_isFacingRight = !m_isFacingRight;
         m_playerSprite.flipX = !m_playerSprite.flipX;
