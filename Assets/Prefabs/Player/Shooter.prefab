@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2510625245348369103, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       propertyPath: m_Name
-      value: Player
+      value: Shooter
       objectReference: {fileID: 0}
     - target: {fileID: 4187260075922258525, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -51,6 +51,10 @@ PrefabInstance:
     - target: {fileID: 4187260075922258525, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8322286110501599423, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 354708365
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

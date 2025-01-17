@@ -10,7 +10,7 @@ public class Player_Input_Handler : NetworkBehaviour
     private Transform m_playerTransform;
     protected PlayerInputAction m_PlayerActions;
 
-    [SerializeField] private bool m_isFacingRight = true;
+    [SerializeField] protected bool m_isFacingRight = true;
     [SerializeField] float m_moveSpeed = 5f;
 
     protected virtual void Awake()
@@ -40,7 +40,7 @@ public class Player_Input_Handler : NetworkBehaviour
         m_PlayerActions.Disable();
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (!IsOwner) return;
         MovePlayer();
@@ -55,12 +55,15 @@ public class Player_Input_Handler : NetworkBehaviour
         }
 
         m_RB.linearVelocity = m_moveInput * m_moveSpeed;
+
+        
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    void FlipSpriteRpc()
+    protected virtual void FlipSpriteRpc()
     {
         m_isFacingRight = !m_isFacingRight;
+        Debug.Log("isFacingRightFlipped");
         m_playerSprite.flipX = !m_playerSprite.flipX;
     }
 

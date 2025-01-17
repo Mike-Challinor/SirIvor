@@ -75,7 +75,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: -4366263941106342648, guid: 4f99ae8a2dfe66f43a7c39651077e035, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -194,6 +194,7 @@ MonoBehaviour:
   m_healthComponent: {fileID: 0}
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
+  m_isBuildMode: 0
   m_SpriteArray:
   - {fileID: -4366263941106342648, guid: 4f99ae8a2dfe66f43a7c39651077e035, type: 3}
   m_buildSprite: {fileID: 585346724093133440}

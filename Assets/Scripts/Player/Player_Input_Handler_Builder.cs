@@ -10,9 +10,23 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
         builderControllerScript = GetComponent<PlayerControllerBuilder>();
     }
 
+    protected override void Update()
+    {
+        base.Update();
+
+        if (Input.GetKeyUp(KeyCode.B))
+        {
+            
+            Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::UPDATE:: Calling SetBuildMode (the old way)");
+            builderControllerScript.SetBuildMode();
+            
+        }
+    }
+
     protected override void OnEnable()
     {
         base.OnEnable();
+
         if (m_PlayerActions != null)
         {
             m_PlayerActions.Enable();
@@ -41,4 +55,10 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
         builderControllerScript.SetBuildMode();
     }
 
+    protected override void FlipSpriteRpc()
+    {
+        base.FlipSpriteRpc();
+        builderControllerScript.FlipBuildSprite(m_isFacingRight);  
+
+    }
 }

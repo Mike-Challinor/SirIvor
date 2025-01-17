@@ -3,7 +3,7 @@ using System.Collections;
 
 public class PlayerControllerBuilder : PlayerController
 {
-    bool m_isBuildMode = false;
+    [SerializeField] bool m_isBuildMode = false;
     bool m_isBuilding = false;
     float m_buildTimer = 1f;
 
@@ -40,6 +40,7 @@ public class PlayerControllerBuilder : PlayerController
 
     public void SetBuildMode()
     {
+        Debug.Log("PLAYERCONTROLLERBUILDER::SETBUILDMODE:: Function called");
         m_isBuildMode = !m_isBuildMode; // Set build mode
 
         if (m_isBuildMode)
@@ -55,9 +56,13 @@ public class PlayerControllerBuilder : PlayerController
 
     public void EnableBuildMode()
     {
+        Debug.Log("PLAYERCONTROLLERBUILDER::ENABLEBUILDMODE:: Function called");
+
         // Draw sprite in front of player
         if (m_buildSprite != null) // Check sprite component is not null
         {
+            Debug.Log("PLAYERCONTROLLERBUILDER::ENABLEBUILDMODE:: Build sprite is not null, activating gameobject");
+
             m_buildSprite.SetActive(true); // Enable the sprite component
         }
 
@@ -69,9 +74,13 @@ public class PlayerControllerBuilder : PlayerController
     
     public void DisableBuildMode()
     {
+        Debug.Log("PLAYERCONTROLLERBUILDER::DISABLEBUILDMODE:: Function called");
+
         // Remove sprite in front of player
         if (m_buildSprite != null) // Check sprite component is not null
         {
+            Debug.Log("PLAYERCONTROLLERBUILDER::DISABLEBUILDMODE:: Build sprite is not null, deactivating gameobject");
+
             m_buildSprite.SetActive(false); // Disable the sprite component
         }
 
@@ -111,6 +120,24 @@ public class PlayerControllerBuilder : PlayerController
     private void SetSprite(Sprite sprite)
     {
         if (m_SpriteComponent != null) { m_SpriteComponent.sprite = sprite; }
+    }
+
+    public void FlipBuildSprite(bool isFacingRight)
+    {
+        // Move build item position to correct direction relative to the player
+        Vector3 localOffset = m_buildSprite.transform.localPosition;  // Get current local position of the build sprite
+
+        if (isFacingRight)
+        {
+            // Set the local position to the right (positive x direction)
+            m_buildSprite.transform.localPosition = new Vector3(Mathf.Abs(localOffset.x), localOffset.y, localOffset.z);
+        }
+        else
+        {
+            // Set the local position to the left (negative x direction)
+            m_buildSprite.transform.localPosition = new Vector3(-Mathf.Abs(localOffset.x), localOffset.y, localOffset.z);
+        }
+
     }
 
 }

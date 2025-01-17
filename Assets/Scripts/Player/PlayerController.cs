@@ -120,5 +120,4 @@ public class PlayerController : NetworkBehaviour
         return mousePos.x >= 0 && mousePos.x <= Screen.width && mousePos.y >= 0 && mousePos.y <= Screen.height;
     }
 
-
 }
