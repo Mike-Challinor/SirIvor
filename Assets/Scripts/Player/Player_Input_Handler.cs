@@ -63,7 +63,6 @@ public class Player_Input_Handler : NetworkBehaviour
     protected virtual void FlipSpriteRpc()
     {
         m_isFacingRight = !m_isFacingRight;
-        Debug.Log("isFacingRightFlipped");
         m_playerSprite.flipX = !m_playerSprite.flipX;
     }
 
