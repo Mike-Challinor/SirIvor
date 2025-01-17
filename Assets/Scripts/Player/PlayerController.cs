@@ -15,7 +15,7 @@ public class PlayerController : NetworkBehaviour
     private SpriteRenderer m_playerSprite;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected virtual void Start()
     {
         // Below is code to execute on both owner and not owner
 
@@ -60,7 +60,7 @@ public class PlayerController : NetworkBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    protected virtual void Update()
     {
         //Only update if owner
         if(IsOwner)
@@ -71,7 +71,7 @@ public class PlayerController : NetworkBehaviour
         
     }
 
-    private void HandleInput()
+    protected void HandleInput()
     {
 
         // Get the position of the players cursor 
@@ -114,7 +114,7 @@ public class PlayerController : NetworkBehaviour
 
 
     // Function for checking whether the mouse position is within the screen bounds
-    bool IsMouseWithinScreen()
+    protected bool IsMouseWithinScreen()
     {
         Vector3 mousePos = Input.mousePosition;
         return mousePos.x >= 0 && mousePos.x <= Screen.width && mousePos.y >= 0 && mousePos.y <= Screen.height;

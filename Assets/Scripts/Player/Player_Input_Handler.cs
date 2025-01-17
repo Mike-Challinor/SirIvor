@@ -5,22 +5,22 @@ using Unity.Netcode;
 public class Player_Input_Handler : NetworkBehaviour
 {
     private Rigidbody2D m_RB;
-    PlayerInputAction m_PlayerActions;
     private Vector2 m_moveInput;
     private SpriteRenderer m_playerSprite;
     private Transform m_playerTransform;
+    protected PlayerInputAction m_PlayerActions;
 
     [SerializeField] private bool m_isFacingRight = true;
     [SerializeField] float m_moveSpeed = 5f;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         m_RB = GetComponent<Rigidbody2D>();
         m_playerSprite = GetComponent<SpriteRenderer>();
         m_playerTransform = GetComponent<Transform>();
     }
 
-    private void OnEnable()
+    protected virtual void OnEnable()
     {
         m_PlayerActions = new PlayerInputAction();
 
@@ -33,7 +33,7 @@ public class Player_Input_Handler : NetworkBehaviour
 
     }
 
-    private void OnDisable()
+    protected virtual void OnDisable()
     {
         m_PlayerActions.Player.Move.performed -= ctx => m_moveInput = ctx.ReadValue<Vector2>();
         m_PlayerActions.Player.Move.canceled -= ctx => m_moveInput = Vector2.zero;
