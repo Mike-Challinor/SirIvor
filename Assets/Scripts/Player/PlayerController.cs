@@ -8,14 +8,14 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private PlayerHUD m_playerHUD;
     [SerializeField] private HealthComponent m_healthComponent;
     [SerializeField] private Camera m_mainCamera;
-    [SerializeField] private Camera m_playerCamera;
+    [SerializeField] protected Camera m_playerCamera;
     
     private const float m_cameraMinZoom = 4f;
     private const float m_cameraMaxZoom = 7.5f;
     private SpriteRenderer m_playerSprite;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected virtual void Start()
     {
         // Below is code to execute on both owner and not owner
 
@@ -38,12 +38,12 @@ public class PlayerController : NetworkBehaviour
             // Initialise the player hud
             if (m_playerHUD == null)
             {
-                Debug.Log("ERROR::PLAYERNETWORK::START:: Is Local player but Player HUD is null");
+                Debug.Log("ERROR::PLAYERCONTROLLER::START:: Is Local player but Player HUD is null");
             }
 
             else
             {
-                Debug.Log("PLAYERNETWORK::START:: Is local player and PlayerHud is not null");
+                Debug.Log("PLAYERCONTROLLER::START:: Is local player and PlayerHud is not null");
 
                 // Inititalise the player HUD
                 m_playerHUD.initHUD(m_healthComponent.GetMaxHealth());
@@ -60,7 +60,7 @@ public class PlayerController : NetworkBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    protected virtual void Update()
     {
         //Only update if owner
         if(IsOwner)
@@ -71,13 +71,13 @@ public class PlayerController : NetworkBehaviour
         
     }
 
-    private void HandleInput()
+    protected void HandleInput()
     {
 
         // Get the position of the players cursor 
         if (m_playerCamera == null)
         {
-            Debug.Log("PLAYERNETWORK::HANDLEINPUT:: Player camera is null");
+            Debug.Log("PLAYERCONTROLLER::HANDLEINPUT:: Player camera is null");
         }
 
         else
@@ -114,11 +114,10 @@ public class PlayerController : NetworkBehaviour
 
 
     // Function for checking whether the mouse position is within the screen bounds
-    bool IsMouseWithinScreen()
+    protected bool IsMouseWithinScreen()
     {
         Vector3 mousePos = Input.mousePosition;
         return mousePos.x >= 0 && mousePos.x <= Screen.width && mousePos.y >= 0 && mousePos.y <= Screen.height;
     }
-
 
 }

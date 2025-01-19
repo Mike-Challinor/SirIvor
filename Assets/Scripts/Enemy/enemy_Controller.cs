@@ -249,7 +249,7 @@ public class enemy_Controller : NetworkBehaviour
     private IEnumerator AttackCooldown()
     {
         Debug.Log("ENEMY_CONTROLLER::ATTACKCOOLDOWN:: Ending Attack!");
-        ChangeSpriteColourRpc(Color.white); // Return sprite to white colour
+        ChangeSpriteColour(Color.white); // Return sprite to white colour
         yield return new WaitForSeconds(m_attackCooldown);
         m_isAttacking = false;
     }
@@ -270,6 +270,8 @@ public class enemy_Controller : NetworkBehaviour
         {
             m_attackCollider.offset = new Vector2(-Mathf.Abs(m_attackCollider.offset.x), m_attackCollider.offset.y);
         }
+
+        Debug.Log("ENEMYCONTROLLER::FLIPSPRITERPC:: Flipping enemy sprite");
     }
 
     // Debug function for drawing gizmos of the enemy's attack size
@@ -281,15 +283,15 @@ public class enemy_Controller : NetworkBehaviour
             Vector2 attackCenter = m_attackCollider.bounds.center;
             Vector2 attackSize = new Vector2(m_attackCollider.bounds.size.x, m_attackCollider.bounds.size.y);
 
-            ChangeSpriteColourRpc(Color.red);
+            ChangeSpriteColour(Color.red);
             Gizmos.DrawWireCube(attackCenter, (Vector3)attackSize); // Cast to Vector3 for visualization
         }
     }
 
-    
-    private void ChangeSpriteColourRpc(Color colour)
+    void ChangeSpriteColour(Vector4 colour)
     {
         m_enemySprite.color = colour;
+        Debug.Log("$ENEMYCONTROLLER::CHANGESPRITECOLOURRPC:: Colour of sprite changed to: " + colour);
     }
 
 
