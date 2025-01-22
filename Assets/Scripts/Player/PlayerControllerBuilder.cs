@@ -170,11 +170,12 @@ public class PlayerControllerBuilder : PlayerController
 
     private IEnumerator StartBuild()
     {
-        Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Initiating build");
+        Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Starting build");
 
         if (!m_isBuilding)
         {
             m_isBuilding = true;
+            m_playerInputHandler.SetCanMove(false);
 
             // Sync with the server
             Debug.Log($"Tilemap index is: " + GetTilemapIndex(m_structuresTilemap));
@@ -199,6 +200,7 @@ public class PlayerControllerBuilder : PlayerController
     public void CancelBuilding()
     {
         m_isBuilding = false;
+        m_playerInputHandler.SetCanMove(true);
     }
 
     private void SetSprite(TileBase tile)
@@ -255,7 +257,7 @@ public class PlayerControllerBuilder : PlayerController
             TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
             m_TilemapArray[tilemapindex].SetTile(position, tile);
             m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
-            m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f));
+            m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the transparency of the sprite
         }
         
 
@@ -286,7 +288,7 @@ public class PlayerControllerBuilder : PlayerController
             {
                 m_TilemapArray[tilemapindex].SetTile(position, tile);
                 m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
-                m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f));
+                m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the transparency of the sprite
             }
 
         }

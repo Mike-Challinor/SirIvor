@@ -9,6 +9,7 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private HealthComponent m_healthComponent;
     [SerializeField] private Camera m_mainCamera;
     [SerializeField] protected Camera m_playerCamera;
+    [SerializeField] protected Player_Input_Handler m_playerInputHandler;
     
     private const float m_cameraMinZoom = 4f;
     private const float m_cameraMaxZoom = 7.5f;
@@ -28,6 +29,7 @@ public class PlayerController : NetworkBehaviour
         m_playerHUD = GetComponent<PlayerHUD>();
         m_healthComponent = GetComponent<HealthComponent>();
         m_playerSprite = GetComponent<SpriteRenderer>();
+        m_playerInputHandler = GetComponent<Player_Input_Handler>();
 
         // Turn off main camera for player
         m_mainCamera.enabled = false;
