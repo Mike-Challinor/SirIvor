@@ -3,6 +3,8 @@ using UnityEngine.Tilemaps;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UIElements;
+using static UnityEditor.PlayerSettings;
 
 public class PlayerControllerBuilder : PlayerController
 {
@@ -13,10 +15,11 @@ public class PlayerControllerBuilder : PlayerController
     private Tilemap m_buildModeTilemap;
     private Tilemap m_structuresTilemap;
     private Vector3Int m_buildTileLocation;
-    private bool m_canBuild = false;
+    [SerializeField] private bool m_canBuild = false;
 
     [SerializeField] private bool m_isBuildMode = false;
     [SerializeField] private TileBase[] m_TileArray;
+    [SerializeField] private Tilemap[] m_TilemapArray;
     [SerializeField] private GameObject m_buildSprite;
 
     private float lastUpdateTime = 0f;
@@ -40,9 +43,11 @@ public class PlayerControllerBuilder : PlayerController
         if (m_buildModeGameObject != null)
         {
             m_buildModeTilemap = m_buildModeGameObject.GetComponent<Tilemap>();
+            m_TilemapArray[0] = m_buildModeTilemap;
         }
 
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
+        m_TilemapArray[1] = m_structuresTilemap;
     }
 
     // Update is called once per frame
@@ -67,60 +72,67 @@ public class PlayerControllerBuilder : PlayerController
             // Check if the mouse is within the screen and other conditions
             if (IsMouseWithinScreen() && Time.timeScale == 1 && Application.isFocused)
             {
-                Vector3Int cellPosition = m_buildModeTilemap.WorldToCell(mousePos);
+                DrawBuildPreviewSprite(mousePos);
+            }
+        }
+    }
 
-                // Throttle updates to improve performance
-                if (Time.time - lastUpdateTime >= updateInterval)
+    private void DrawBuildPreviewSprite(Vector3 mousePos)
+    {
+        Vector3Int cellPosition = m_buildModeTilemap.WorldToCell(mousePos);
+
+        // Throttle updates to improve performance
+        if (Time.time - lastUpdateTime >= updateInterval)
+        {
+            lastUpdateTime = Time.time;
+
+            // Check if the position has changed or the cache doesn't match
+            if (cellPosition != m_buildTileLocation || !localTileCache.ContainsKey(cellPosition))
+            {
+                // Remove the previous tile immediately
+                if (localTileCache.ContainsKey(m_buildTileLocation))
                 {
-                    lastUpdateTime = Time.time;
-
-                    // Check if the position has changed or the cache doesn't match
-                    if (cellPosition != m_buildTileLocation || !localTileCache.ContainsKey(cellPosition))
-                    {
-                        // Remove the previous tile immediately
-                        if (localTileCache.ContainsKey(m_buildTileLocation))
-                        {
-                            m_buildModeTilemap.SetTile(m_buildTileLocation, null);
-                            localTileCache.Remove(m_buildTileLocation); // Clear cache for the old location
-                        }
-
-                        // Update the build location
-                        m_buildTileLocation = cellPosition;
-
-                        // Set a new tile if equipped
-                        if (m_equippedTile != null)
-                        {
-                            TileBase tile = m_equippedTile;
-
-                            // Update locally
-                            m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
-                            localTileCache[m_buildTileLocation] = tile;
-
-                            // Sync with the server
-                            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId);
-                        }
-                        else
-                        {
-                            Debug.Log("Equipped tile is null");
-                        }
-
-                        // Check if the tile can be built at the location
-                        if (m_structuresTilemap != null)
-                        {
-                            TileBase structureTile = m_structuresTilemap.GetTile(cellPosition);
-                            m_buildModeTilemap.color = structureTile == null ? Color.white : Color.red;
-                        }
-                        else
-                        {
-                            Debug.Log("PLAYERCONTROLLERBUILDER::UPDATE:: Structures tilemap is null");
-                        }
-                    }
-                    else
-                    {
-                        // Force synchronization if a desync is detected
-                        SyncTilesWithServer();
-                    }
+                    m_buildModeTilemap.SetTile(m_buildTileLocation, null);
+                    localTileCache.Remove(m_buildTileLocation); // Clear cache for the old location
                 }
+
+                // Update the build location
+                m_buildTileLocation = cellPosition;
+
+                // Set a new tile if equipped
+                if (m_equippedTile != null)
+                {
+                    TileBase tile = m_equippedTile;
+
+                    // Update locally
+                    m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
+                    localTileCache[m_buildTileLocation] = tile;
+
+                    // Sync with the server
+                    SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
+                }
+                else
+                {
+                    Debug.Log("Equipped tile is null");
+                }
+
+                // Check if the tile can be built at the location
+                if (m_structuresTilemap != null)
+                {
+                    TileBase structureTile = m_structuresTilemap.GetTile(cellPosition);
+                    m_buildModeTilemap.color = structureTile == null ? Color.white : Color.red;
+                    m_canBuild = structureTile == null ? true : false;
+                }
+                else
+                {
+                    m_canBuild = false;
+                    Debug.Log("PLAYERCONTROLLERBUILDER::UPDATE:: Structures tilemap is null");
+                }
+            }
+            else
+            {
+                // Force synchronization if a desync is detected
+                SyncTilesWithServer();
             }
         }
     }
@@ -147,14 +159,28 @@ public class PlayerControllerBuilder : PlayerController
     public void DisableBuildMode()
     {
         Debug.Log("PLAYERCONTROLLERBUILDER::DISABLEBUILDMODE:: Function called");
-        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId);
+        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
+        m_canBuild = false;
+    }
+
+    public void StartingBuild()
+    {
+        StartCoroutine(StartBuild());
     }
 
     private IEnumerator StartBuild()
     {
+        Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Initiating build");
+
         if (!m_isBuilding)
         {
             m_isBuilding = true;
+
+            // Sync with the server
+            Debug.Log($"Tilemap index is: " + GetTilemapIndex(m_structuresTilemap));
+            Debug.Log($"Tile index is: " + GetTileIndex(m_equippedTile));
+            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false);
+
             yield return StartCoroutine(BuildingTimer());
         }
         else
@@ -196,8 +222,6 @@ public class PlayerControllerBuilder : PlayerController
 
     private void SyncTilesWithServer()
     {
-        Debug.Log("PLAYERCONTROLLERBUILDER::SYNCTILESWITHSERVER:: Synchronizing tiles with server");
-
         // Request the server to resend the current state of the tilemap
         RequestTileSyncServerRpc();
     }
@@ -205,41 +229,68 @@ public class PlayerControllerBuilder : PlayerController
     [Rpc(SendTo.Server)]
     private void RequestTileSyncServerRpc()
     {
-        Debug.Log("PLAYERCONTROLLERBUILDER::REQUESTTILESYNC:: Server received sync request");
-
         // Iterate through all tiles in the current state
         foreach (var position in localTileCache.Keys)
         {
             TileBase tile = localTileCache[position];
             int tileIndex = GetTileIndex(tile);
-            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId);
+            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
         }
     }
 
     [Rpc(SendTo.Server)]
-    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId)
+    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner)
     {
-        if (OwnerClientId == networkObjectId && IsOwner)
+        if (justOwner) // When the tile should show for just the owner
         {
-            TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
-            m_buildModeTilemap.SetTile(position, tile);
+            if (OwnerClientId == networkObjectId && IsOwner)
+            {
+                TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+                m_TilemapArray[tilemapindex].SetTile(position, tile);
+            }
         }
 
-        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId);
+        else // When the tile should show for everyone
+        {
+            TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+            m_TilemapArray[tilemapindex].SetTile(position, tile);
+            m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
+            m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f));
+        }
+        
+
+        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner);
     }
 
     [Rpc(SendTo.NotServer)]
-    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId)
+    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner)
     {
-        if (OwnerClientId == networkObjectId && IsOwner)
+        if (justOwner) // When the tile should show for just the owner
+        {
+            if (OwnerClientId == networkObjectId && IsOwner)
+            {
+                TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+
+                if (m_TilemapArray[tilemapindex] != null)
+                {
+                    m_TilemapArray[tilemapindex].SetTile(position, tile);
+                }
+            }
+        }
+
+        else // When the tile should show for everyone
         {
             TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
 
-            if (m_buildModeTilemap != null)
+            if (m_TilemapArray[tilemapindex] != null)
             {
-                m_buildModeTilemap.SetTile(position, tile);
+                m_TilemapArray[tilemapindex].SetTile(position, tile);
+                m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
+                m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f));
             }
+
         }
+        
     }
 
     private int GetTileIndex(TileBase tile)
@@ -252,5 +303,22 @@ public class PlayerControllerBuilder : PlayerController
             }
         }
         return -1;
+    }
+
+    private int GetTilemapIndex(Tilemap tilemap)
+    {
+        for (int i = 0; i < m_TilemapArray.Length; i++)
+        {
+            if (m_TilemapArray[i] == tilemap)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public bool GetCanBuild()
+    {
+        return m_canBuild;
     }
 }
