@@ -18,7 +18,7 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
         {
             
             Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::UPDATE:: Calling SetBuildMode (the old way)");
-            builderControllerScript.SetBuildMode();
+            builderControllerScript.ToggleBuildMode();
             
         }
 
@@ -59,19 +59,29 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
 
     private void OnBuildModePerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)
     {
+        if (!IsOwner || !Application.isFocused)
+        {
+            return;
+        } 
+
         Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::ONBUILDMODEPERFORMED:: Executing OnBuildModePerformed callback");
-        builderControllerScript.SetBuildMode();
+        builderControllerScript.ToggleBuildMode();
     }
 
     private void OnLeftClickPerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)
     {
+        if (!IsOwner || !Application.isFocused)
+        {
+            return;
+        }
+
         Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::ONLEFTCLICKPERFORMED:: Executing OnLeftClickerPerformed callback");
 
         // Call the build function if the player can build
         if (builderControllerScript.GetCanBuild())
         {
             Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::ONLEFTCLICKPERFORMED:: Player can build.. calling StartingBuild function");
-            builderControllerScript.StartingBuild();
+            builderControllerScript.StartBuild();
         } 
 
         else

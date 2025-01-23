@@ -138,6 +138,7 @@ MonoBehaviour:
   m_healthComponent: {fileID: 0}
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
+  m_playerInputHandler: {fileID: 0}
   m_canBuild: 0
   m_isBuildMode: 0
   m_TileArray:

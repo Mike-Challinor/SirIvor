@@ -10,7 +10,10 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private Camera m_mainCamera;
     [SerializeField] protected Camera m_playerCamera;
     [SerializeField] protected Player_Input_Handler m_playerInputHandler;
-    
+    [SerializeField] private float m_moveSpeed = 5f;
+
+    protected Rigidbody2D m_RB;
+
     private const float m_cameraMinZoom = 4f;
     private const float m_cameraMaxZoom = 7.5f;
     private SpriteRenderer m_playerSprite;
@@ -30,6 +33,7 @@ public class PlayerController : NetworkBehaviour
         m_healthComponent = GetComponent<HealthComponent>();
         m_playerSprite = GetComponent<SpriteRenderer>();
         m_playerInputHandler = GetComponent<Player_Input_Handler>();
+        m_RB = GetComponent<Rigidbody2D>();
 
         // Turn off main camera for player
         m_mainCamera.enabled = false;
@@ -75,43 +79,46 @@ public class PlayerController : NetworkBehaviour
 
     protected void HandleInput()
     {
-
-        // Get the position of the players cursor 
-        if (m_playerCamera == null)
+        if (Application.isFocused && IsMouseWithinScreen())
         {
-            Debug.Log("PLAYERCONTROLLER::HANDLEINPUT:: Player camera is null");
-        }
-
-        else
-        {
-            // Get mouse position
-            Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
-            mousePos.z = 0; // Ensure z is at the same level as the player
-
-            // Check if the mouse is within the screen boundaries
-            if (IsMouseWithinScreen() && Time.timeScale == 1)
+            // Get the position of the players cursor 
+            if (m_playerCamera == null)
             {
-                // Calculate direction to mouse
-                Vector3 direction = (mousePos - transform.position).normalized;
+                Debug.Log("PLAYERCONTROLLER::HANDLEINPUT:: Player camera is null");
+            }
 
-                // Calculate the rotation angle in radians
-                float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            else
+            {
+                // Get mouse position
+                Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
+                mousePos.z = 0; // Ensure z is at the same level as the player
 
+                // Check if the mouse is within the screen boundaries
+                if (Time.timeScale == 1)
+                {
+                    // Calculate direction to mouse
+                    Vector3 direction = (mousePos - transform.position).normalized;
+
+                    // Calculate the rotation angle in radians
+                    float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+                }
+            }
+
+
+            // Control camera zoom
+            if (Input.GetAxisRaw("Mouse ScrollWheel") > 0)
+            {
+                // Zoom in (decrease orthographic size)
+                m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize - 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
+            }
+            else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0)
+            {
+                // Zoom out (increase orthographic size)
+                m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize + 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
             }
         }
-
-
-        // Control camera zoom
-        if (Input.GetAxisRaw("Mouse ScrollWheel") > 0)
-        {
-            // Zoom in (decrease orthographic size)
-            m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize - 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
-        }
-        else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0)
-        {
-            // Zoom out (increase orthographic size)
-            m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize + 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
-        }
+        
     }
 
 
@@ -120,6 +127,12 @@ public class PlayerController : NetworkBehaviour
     {
         Vector3 mousePos = Input.mousePosition;
         return mousePos.x >= 0 && mousePos.x <= Screen.width && mousePos.y >= 0 && mousePos.y <= Screen.height;
+    }
+
+    //Accessor method for getting movement speed
+    public float GetMoveSpeed()
+    {
+        return m_moveSpeed;
     }
 
 }

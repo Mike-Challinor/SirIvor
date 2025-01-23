@@ -15,8 +15,9 @@ public class PlayerControllerBuilder : PlayerController
     private Tilemap m_buildModeTilemap;
     private Tilemap m_structuresTilemap;
     private Vector3Int m_buildTileLocation;
-    [SerializeField] private bool m_canBuild = false;
+    private float m_buildDistance = 2.26f;
 
+    [SerializeField] private bool m_canBuild = false;
     [SerializeField] private bool m_isBuildMode = false;
     [SerializeField] private TileBase[] m_TileArray;
     [SerializeField] private Tilemap[] m_TilemapArray;
@@ -57,9 +58,14 @@ public class PlayerControllerBuilder : PlayerController
 
         if (!IsOwner) return;
 
-        if (m_isBuildMode)
+        if (m_isBuilding) // Update logic for when building
         {
-            if (m_playerCamera == null)
+            MovePlayerToBuildLocation(m_buildTileLocation, base.GetMoveSpeed());
+        }
+
+        if (m_isBuildMode) // Update logic for when in build mode
+        {
+            if (m_playerCamera == null) // Don't execute code if player camera is null
             {
                 Debug.Log("PLAYERCONTROLLERBUILDER::UPDATE:: Player camera is null");
                 return;
@@ -137,7 +143,7 @@ public class PlayerControllerBuilder : PlayerController
         }
     }
 
-    public void SetBuildMode()
+    public void ToggleBuildMode()
     {
         m_isBuildMode = !m_isBuildMode;
 
@@ -163,17 +169,13 @@ public class PlayerControllerBuilder : PlayerController
         m_canBuild = false;
     }
 
-    public void StartingBuild()
-    {
-        StartCoroutine(StartBuild());
-    }
-
-    private IEnumerator StartBuild()
+    public void StartBuild()
     {
         Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Starting build");
 
         if (!m_isBuilding)
         {
+            ToggleBuildMode(); // Disable build mode to start building
             m_isBuilding = true;
             m_playerInputHandler.SetCanMove(false);
 
@@ -182,19 +184,18 @@ public class PlayerControllerBuilder : PlayerController
             Debug.Log($"Tile index is: " + GetTileIndex(m_equippedTile));
             SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false);
 
-            yield return StartCoroutine(BuildingTimer());
         }
         else
         {
             Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Player is already building");
         }
 
-        CancelBuilding();
     }
 
     private IEnumerator BuildingTimer()
     {
         yield return new WaitForSeconds(m_buildTimer);
+        CancelBuilding();
     }
 
     public void CancelBuilding()
@@ -322,5 +323,28 @@ public class PlayerControllerBuilder : PlayerController
     public bool GetCanBuild()
     {
         return m_canBuild;
+    }
+
+    private void MovePlayerToBuildLocation(Vector3 position, float speed)
+    {
+        if (transform.position.x - position.x >= m_buildDistance || transform.position.y - position.y >= m_buildDistance)
+        {
+            // Calculate direction to the tile
+            Vector3 direction = (position - transform.position).normalized;
+
+            m_RB.linearVelocity = direction * speed;
+        }
+
+        else
+        {
+           StartCoroutine(BuildingTimer());
+        }
+        
+    }
+
+    // Debug function for drawing gizmos of the players's build range
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireSphere(transform.position, m_buildDistance);
     }
 }

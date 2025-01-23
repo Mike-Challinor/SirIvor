@@ -9,16 +9,17 @@ public class Player_Input_Handler : NetworkBehaviour
     private SpriteRenderer m_playerSprite;
     private Transform m_playerTransform;
     protected PlayerInputAction m_PlayerActions;
-    private bool m_canMove = true;
+    private PlayerController m_playerController;
 
     [SerializeField] protected bool m_isFacingRight = true;
-    [SerializeField] float m_moveSpeed = 5f;
+    [SerializeField] private bool m_canMove = true;
 
     protected virtual void Awake()
     {
         m_RB = GetComponent<Rigidbody2D>();
         m_playerSprite = GetComponent<SpriteRenderer>();
         m_playerTransform = GetComponent<Transform>();
+        m_playerController = GetComponent<PlayerController>();
     }
 
     protected virtual void OnEnable()
@@ -57,7 +58,7 @@ public class Player_Input_Handler : NetworkBehaviour
                 FlipSpriteRpc();
             }
 
-            m_RB.linearVelocity = m_moveInput * m_moveSpeed;
+            m_RB.linearVelocity = m_moveInput * m_playerController.GetMoveSpeed();
 
         }
 
