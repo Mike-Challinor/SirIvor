@@ -648,6 +648,7 @@ MonoBehaviour:
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
   m_playerInputHandler: {fileID: 0}
+  m_moveSpeed: 5
 --- !u!114 &8526498929077234573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -662,7 +663,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
-  m_moveSpeed: 4
+  m_canMove: 1
 --- !u!114 &919939198448878564
 MonoBehaviour:
   m_ObjectHideFlags: 0

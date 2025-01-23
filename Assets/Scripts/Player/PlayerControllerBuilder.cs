@@ -3,8 +3,6 @@ using UnityEngine.Tilemaps;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UIElements;
-using static UnityEditor.PlayerSettings;
 
 public class PlayerControllerBuilder : PlayerController
 {

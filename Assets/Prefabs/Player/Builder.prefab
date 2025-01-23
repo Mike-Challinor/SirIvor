@@ -139,6 +139,9 @@ MonoBehaviour:
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
   m_playerInputHandler: {fileID: 0}
+  m_moveSpeed: 5
+  m_isBuilding: 0
+  m_startBuilding: 0
   m_canBuild: 0
   m_isBuildMode: 0
   m_TileArray:
@@ -161,7 +164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
-  m_moveSpeed: 5
+  m_canMove: 1
 --- !u!4 &8212227382711108566 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4187260075922258525, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
