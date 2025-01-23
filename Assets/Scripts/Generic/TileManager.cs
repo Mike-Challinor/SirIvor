@@ -74,7 +74,7 @@ public class TileManager : MonoBehaviour
 
                     if (tileType == "Fence")
                     {
-                        m_tileDataMap[position] = new TileData(m_fenceHealth, m_fenceHealth, tileType);
+                        AddSingleSprite(position, m_fenceHealth, m_fenceHealth, tileType);
                     }
                     else if (tileType == "Platform")
                     {
@@ -91,6 +91,11 @@ public class TileManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void AddSingleSprite(Vector3Int position, float startingHealth, float maxHealth, string tileType)
+    {
+        m_tileDataMap[position] = new TileData(startingHealth, maxHealth, tileType);
     }
 
     private void AddPlatformGroup(Vector3Int position)
@@ -130,7 +135,7 @@ public class TileManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"No tile found at {tilePosition} to add to group.");
+            // No tilemap at location
         }
     }
 
@@ -142,7 +147,7 @@ public class TileManager : MonoBehaviour
         return group;
     }
 
-    private string GetTileTypeFromArrays(TileBase tile)
+    public string GetTileTypeFromArrays(TileBase tile)
     {
         for (int i = 0; i < m_tileTypeArrays.Count; i++)
         {
@@ -168,11 +173,65 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
+    public float? GetMaxHealth(Vector3Int tilePosition)
+    {
+        if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
+        {
+            return tileData.MaxHealth;
+        }
+
+        Debug.LogWarning($"Tile at {tilePosition} does not exist.");
+        return null;
+    }
+
+    public void SetTileHealth(Vector3Int tilePosition, float healthToAdd)
+    {
+        if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
+        {
+            // Modify the current health
+            tileData.CurrentHealth += healthToAdd;
+
+            // Prevent current health from exceeding the max health
+            if (tileData.CurrentHealth > tileData.MaxHealth)
+            {
+                tileData.CurrentHealth = tileData.MaxHealth;
+            }
+
+            // Update the tile data in the dictionary
+            m_tileDataMap[tilePosition] = tileData;
+
+            // Log the updated health
+            Debug.Log($"{healthToAdd} health has been added to the tile data at position: {tilePosition}. Current health = {tileData.CurrentHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
+        }
+    }
+
+
     public void UpdateTileGroupHealth(TileGroup group, float amount)
     {
         group.UpdateHealth(amount);
         group.SyncHealthAcrossTiles(m_tileDataMap);
         Debug.Log($"Updated group health to {group.SharedHealth.CurrentHealth}");
+    }
+
+    public float GetMaxHealthByType(string tileType)
+    {
+        switch (tileType)
+        {
+            case "Fence":
+                return m_fenceHealth;
+
+            case "Platform":
+                return m_platformHealth;
+
+            case "Building":
+                return m_buildingHealth;
+        }
+
+        return 100f;
     }
 }
 

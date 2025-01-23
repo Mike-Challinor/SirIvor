@@ -14,12 +14,10 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
     {
         base.Update();
 
-        if (Input.GetKeyUp(KeyCode.B))
+        if (Input.GetKeyUp(KeyCode.B) && !builderControllerScript.GetIsBuilding())
         {
-            
             Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::UPDATE:: Calling SetBuildMode (the old way)");
             builderControllerScript.ToggleBuildMode();
-            
         }
 
     }
@@ -64,8 +62,12 @@ public class Player_Input_Handler_Builder : Player_Input_Handler
             return;
         } 
 
-        Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::ONBUILDMODEPERFORMED:: Executing OnBuildModePerformed callback");
-        builderControllerScript.ToggleBuildMode();
+        if (!builderControllerScript.GetIsBuilding()) // Toggle build mode if player is not already building
+        {
+            Debug.Log("PLAYER_INPUT_HANDLER_BUILDER::ONBUILDMODEPERFORMED:: Executing OnBuildModePerformed callback");
+            builderControllerScript.ToggleBuildMode();
+        }
+
     }
 
     private void OnLeftClickPerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)

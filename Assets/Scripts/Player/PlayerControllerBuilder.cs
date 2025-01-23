@@ -8,15 +8,17 @@ using static UnityEditor.PlayerSettings;
 
 public class PlayerControllerBuilder : PlayerController
 {
-    private bool m_isBuilding = false;
-    private float m_buildTimer = 1f;
+    private float m_buildTimer = 0.5f;
     private GameObject m_buildModeGameObject;
     private TileBase m_equippedTile;
     private Tilemap m_buildModeTilemap;
     private Tilemap m_structuresTilemap;
     private Vector3Int m_buildTileLocation;
-    private float m_buildDistance = 2.26f;
+    private float m_buildDistance = 1.5f;
+    private TileManager m_tileManager;
 
+    [SerializeField] private bool m_isBuilding = false;
+    [SerializeField] private bool m_startBuilding = false;
     [SerializeField] private bool m_canBuild = false;
     [SerializeField] private bool m_isBuildMode = false;
     [SerializeField] private TileBase[] m_TileArray;
@@ -49,6 +51,7 @@ public class PlayerControllerBuilder : PlayerController
 
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
         m_TilemapArray[1] = m_structuresTilemap;
+        m_tileManager = GameObject.FindWithTag("Tilemanager").GetComponent<TileManager>();
     }
 
     // Update is called once per frame
@@ -58,7 +61,7 @@ public class PlayerControllerBuilder : PlayerController
 
         if (!IsOwner) return;
 
-        if (m_isBuilding) // Update logic for when building
+        if (m_isBuilding && !m_startBuilding) // Update logic for when building
         {
             MovePlayerToBuildLocation(m_buildTileLocation, base.GetMoveSpeed());
         }
@@ -115,7 +118,7 @@ public class PlayerControllerBuilder : PlayerController
                     localTileCache[m_buildTileLocation] = tile;
 
                     // Sync with the server
-                    SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
+                    SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
                 }
                 else
                 {
@@ -143,6 +146,39 @@ public class PlayerControllerBuilder : PlayerController
         }
     }
 
+    private void MovePlayerToBuildLocation(Vector3Int tileLocation, float speed)
+    {
+        Debug.Log("PLAYERCONTROLLERBUILDER:: MOVEPLAYERTOBUILDLOCATION:: Function called...");
+
+        float cellWidth = 1f;
+        float cellHeight = 1f;
+
+        // Convert Vector3Int to Vector3 (ignoring z if necessary)
+        Vector3 position = new Vector3(tileLocation.x + cellWidth / 2, tileLocation.y + cellHeight / 2, transform.position.z);
+
+        // Calculate the distance between player and the sprite to move towards
+        float distance = Vector3.Distance(transform.position, position);
+
+        if (distance > m_buildDistance)
+        {
+            Debug.Log($"Distance equals: {distance} and m_buildDistance equals: {m_buildDistance} ");
+
+            // Calculate direction to the tile
+            Vector3 direction = (position - transform.position).normalized;
+
+            m_RB.linearVelocity = direction * speed;
+        }
+
+        else
+        {
+            Debug.Log("PLAYERCONTROLLERBUILDER:: MOVEPLAYERTOBUILDLOCATION:: Reached destination. Building block");
+            m_RB.linearVelocity = Vector2.zero;
+            StartCoroutine(BuildingTimer());
+            m_startBuilding = true;
+        }
+
+    }
+
     public void ToggleBuildMode()
     {
         m_isBuildMode = !m_isBuildMode;
@@ -165,7 +201,7 @@ public class PlayerControllerBuilder : PlayerController
     public void DisableBuildMode()
     {
         Debug.Log("PLAYERCONTROLLERBUILDER::DISABLEBUILDMODE:: Function called");
-        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
+        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, false);
         m_canBuild = false;
     }
 
@@ -177,14 +213,16 @@ public class PlayerControllerBuilder : PlayerController
         {
             ToggleBuildMode(); // Disable build mode to start building
             m_isBuilding = true;
+            m_RB.linearVelocity = Vector2.zero;
             m_playerInputHandler.SetCanMove(false);
 
             // Sync with the server
             Debug.Log($"Tilemap index is: " + GetTilemapIndex(m_structuresTilemap));
             Debug.Log($"Tile index is: " + GetTileIndex(m_equippedTile));
-            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false);
+            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, true);
 
         }
+
         else
         {
             Debug.Log("PLAYERCONTROLLERBUILDER::STARTBUILD:: Player is already building");
@@ -194,14 +232,62 @@ public class PlayerControllerBuilder : PlayerController
 
     private IEnumerator BuildingTimer()
     {
-        yield return new WaitForSeconds(m_buildTimer);
+        Debug.Log("PLAYERCONTROLLER::BUILDINGTIMER:: Function called...");
+
+        // Add the tile to the tile manager
+        m_tileManager.AddSingleSprite(m_buildTileLocation, 0, GetMaxHealthOfTileToBuild(), m_tileManager.GetTileTypeFromArrays(m_equippedTile)); // Set starting health to 0
+        
+        yield return StartCoroutine(BuildingProgressTimer()); // Wait for timer for adding health / building
+
         CancelBuilding();
+    }
+
+    private IEnumerator BuildingProgressTimer()
+    {
+        float healthIncrement = 10f;
+        float buildInterval = m_buildTimer;
+
+        // Ensure tile data exists before starting
+        if (!m_tileManager.m_tileDataMap.TryGetValue(m_buildTileLocation, out var tileData))
+        {
+            Debug.LogWarning($"Tile at {m_buildTileLocation} not found!");
+            yield break; // Stop the coroutine if no tile data exists
+        }
+
+        // Continue updating health until it reaches max health
+        while (tileData.CurrentHealth < tileData.MaxHealth)
+        {
+            float remainingHealth = tileData.MaxHealth - tileData.CurrentHealth;
+
+            // Add either the increment or the remaining health, whichever is smaller
+            float healthToAdd = Mathf.Min(healthIncrement, remainingHealth);
+            m_tileManager.SetTileHealth(m_buildTileLocation, healthToAdd);
+
+            Debug.Log($"Added {healthToAdd} health to tile at {m_buildTileLocation}. Current health: {tileData.CurrentHealth}");
+
+            // Wait for the interval before the next update
+            yield return new WaitForSeconds(buildInterval);
+
+            // Update tile data reference (to reflect changes made in SetTileHealth)
+            tileData = m_tileManager.m_tileDataMap[m_buildTileLocation];
+        }
+
+        Debug.Log($"Building at {m_buildTileLocation} has reached max health: {tileData.MaxHealth}");
+
+        // Call the server to set the tile
+        SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false);
     }
 
     public void CancelBuilding()
     {
         m_isBuilding = false;
+        m_startBuilding = false;
         m_playerInputHandler.SetCanMove(true);
+    }
+
+    private float GetMaxHealthOfTileToBuild()
+    {
+        return m_tileManager.GetMaxHealthByType(m_tileManager.GetTileTypeFromArrays(m_equippedTile));
     }
 
     private void SetSprite(TileBase tile)
@@ -237,12 +323,12 @@ public class PlayerControllerBuilder : PlayerController
         {
             TileBase tile = localTileCache[position];
             int tileIndex = GetTileIndex(tile);
-            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true);
+            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
         }
     }
 
     [Rpc(SendTo.Server)]
-    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner)
+    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isopaque)
     {
         if (justOwner) // When the tile should show for just the owner
         {
@@ -258,15 +344,24 @@ public class PlayerControllerBuilder : PlayerController
             TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
             m_TilemapArray[tilemapindex].SetTile(position, tile);
             m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
-            m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the transparency of the sprite
+
+            if (isopaque)
+            {
+                m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the sprite to be transparent
+            }
+
+            else
+            {
+                m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid colour
+            }
         }
         
 
-        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner);
+        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner, isopaque);
     }
 
     [Rpc(SendTo.NotServer)]
-    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner)
+    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isOpaque)
     {
         if (justOwner) // When the tile should show for just the owner
         {
@@ -289,7 +384,17 @@ public class PlayerControllerBuilder : PlayerController
             {
                 m_TilemapArray[tilemapindex].SetTile(position, tile);
                 m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
-                m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the transparency of the sprite
+
+                // Set whether the tile is opaque
+                if (isOpaque)
+                {
+                    m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the sprite to be transparent
+                }
+
+                else
+                {
+                    m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid colour
+                }
             }
 
         }
@@ -325,21 +430,9 @@ public class PlayerControllerBuilder : PlayerController
         return m_canBuild;
     }
 
-    private void MovePlayerToBuildLocation(Vector3 position, float speed)
+    public bool GetIsBuilding()
     {
-        if (transform.position.x - position.x >= m_buildDistance || transform.position.y - position.y >= m_buildDistance)
-        {
-            // Calculate direction to the tile
-            Vector3 direction = (position - transform.position).normalized;
-
-            m_RB.linearVelocity = direction * speed;
-        }
-
-        else
-        {
-           StartCoroutine(BuildingTimer());
-        }
-        
+        return m_isBuilding;
     }
 
     // Debug function for drawing gizmos of the players's build range

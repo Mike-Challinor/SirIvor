@@ -42,7 +42,7 @@ public class TileGroup
         m_tiles.Remove(tilePosition);
     }
 
-    // Update the health for the group (if necessary, e.g., when any tile gets damaged)
+    // Update the health for the group
     public void UpdateHealth(float amount)
     {
         // Create a new HealthData with updated health
