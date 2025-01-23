@@ -9,15 +9,17 @@ public class Player_Input_Handler : NetworkBehaviour
     private SpriteRenderer m_playerSprite;
     private Transform m_playerTransform;
     protected PlayerInputAction m_PlayerActions;
+    private PlayerController m_playerController;
 
     [SerializeField] protected bool m_isFacingRight = true;
-    [SerializeField] float m_moveSpeed = 5f;
+    [SerializeField] private bool m_canMove = true;
 
     protected virtual void Awake()
     {
         m_RB = GetComponent<Rigidbody2D>();
         m_playerSprite = GetComponent<SpriteRenderer>();
         m_playerTransform = GetComponent<Transform>();
+        m_playerController = GetComponent<PlayerController>();
     }
 
     protected virtual void OnEnable()
@@ -48,15 +50,18 @@ public class Player_Input_Handler : NetworkBehaviour
 
     private void MovePlayer()
     {
-        //Check to see if moving left or right
-        if ((m_moveInput.x < 0 && m_isFacingRight) || (m_moveInput.x > 0 && !m_isFacingRight))
+        if (m_canMove)
         {
-            FlipSpriteRpc();
+            //Check to see if moving left or right
+            if ((m_moveInput.x < 0 && m_isFacingRight) || (m_moveInput.x > 0 && !m_isFacingRight))
+            {
+                FlipSpriteRpc();
+            }
+
+            m_RB.linearVelocity = m_moveInput * m_playerController.GetMoveSpeed();
+
         }
 
-        m_RB.linearVelocity = m_moveInput * m_moveSpeed;
-
-        
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -64,6 +69,11 @@ public class Player_Input_Handler : NetworkBehaviour
     {
         m_isFacingRight = !m_isFacingRight;
         m_playerSprite.flipX = !m_playerSprite.flipX;
+    }
+
+    public void SetCanMove(bool canMove)
+    {
+        m_canMove = canMove;
     }
 
 }

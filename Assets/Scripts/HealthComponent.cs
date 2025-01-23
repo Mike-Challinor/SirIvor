@@ -35,7 +35,7 @@ public class HealthComponent : MonoBehaviour
         // Update player HUD if present
         if (m_playerHUD == null)
         {
-            Debug.Log("HEALTHCOMPONENT::START:: Player HUD is null");
+
         }
 
         else
@@ -96,6 +96,11 @@ public class HealthComponent : MonoBehaviour
     public float GetMaxHealth()
     {
         return m_maxHealth;
+    }
+
+    public void SetMaxHealth(float health)
+    {
+        m_maxHealth = health;
     }
 }
 

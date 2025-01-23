@@ -647,6 +647,7 @@ MonoBehaviour:
   m_healthComponent: {fileID: 0}
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
+  m_playerInputHandler: {fileID: 0}
 --- !u!114 &8526498929077234573
 MonoBehaviour:
   m_ObjectHideFlags: 0
