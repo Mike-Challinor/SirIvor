@@ -33,7 +33,8 @@ public class TileManagerEditor : Editor
                 EditorGUILayout.BeginVertical("box");
                 EditorGUILayout.LabelField($"Position: {entry.Key}");
                 EditorGUILayout.LabelField($"Type: {entry.Value.Type}");
-                EditorGUILayout.LabelField($"Health: {entry.Value.CurrentHealth.ToString()}");
+                EditorGUILayout.LabelField($"Current Health: {entry.Value.CurrentHealth.ToString()}");
+                EditorGUILayout.LabelField($"Current Health: {entry.Value.MaxHealth.ToString()}");
                 EditorGUILayout.EndVertical();
             }
         }

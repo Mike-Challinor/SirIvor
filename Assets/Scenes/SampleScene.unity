@@ -426,6 +426,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TileManager
       objectReference: {fileID: 0}
+    - target: {fileID: 2525062462588497824, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
+      propertyPath: m_TagString
+      value: Tilemanager
+      objectReference: {fileID: 0}
     - target: {fileID: 5400006588322030640, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_platforms.Array.size
       value: 1
