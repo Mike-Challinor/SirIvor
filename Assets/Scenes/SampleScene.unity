@@ -452,15 +452,15 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: d8f5d03aa1cdb124ba6037113c178767, type: 2}
     - target: {fileID: 5441892827604223438, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.7013347
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5441892827604223438, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.8913219
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5441892827604223438, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.08965685
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5441892827604223438, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_LocalRotation.w
@@ -62842,6 +62842,8 @@ Tilemap:
     m_Data: {fileID: 11400000, guid: c9c582378c9a797418501e51d7f6f7a8, type: 2}
   - m_RefCount: 8
     m_Data: {fileID: 11400000, guid: d8f5d03aa1cdb124ba6037113c178767, type: 2}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileSpriteArray:
   - m_RefCount: 92
     m_Data: {fileID: 21300000, guid: ebefab25b86400d4ebee4c8064b8723f, type: 3}
@@ -62879,6 +62881,8 @@ Tilemap:
     m_Data: {fileID: 21300000, guid: 5196a5021546b1641b8b966f6ca44374, type: 3}
   - m_RefCount: 8
     m_Data: {fileID: 21300000, guid: 522dfec06b2190341965b9c6644d6513, type: 3}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileMatrixArray:
   - m_RefCount: 644
     m_Data:

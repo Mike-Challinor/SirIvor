@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Player_Input_Handler_Builder : Player_Input_Handler
 {
-    private PlayerControllerBuilder builderControllerScript;
+    [SerializeField] private PlayerControllerBuilder builderControllerScript;
 
     protected override void Awake()
     {

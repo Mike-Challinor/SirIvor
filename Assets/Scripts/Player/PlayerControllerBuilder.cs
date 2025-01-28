@@ -3,6 +3,8 @@ using UnityEngine.Tilemaps;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
+using Unity.VisualScripting;
 
 public class PlayerControllerBuilder : PlayerController
 {
@@ -22,6 +24,7 @@ public class PlayerControllerBuilder : PlayerController
     [SerializeField] private TileBase[] m_TileArray;
     [SerializeField] private Tilemap[] m_TilemapArray;
     [SerializeField] private GameObject m_buildSprite;
+    [SerializeField] private GameObject m_playerHUDLocal;
 
     private float lastUpdateTime = 0f;
     private const float updateInterval = 0.05f; // 50ms interval for updates
@@ -252,6 +255,9 @@ public class PlayerControllerBuilder : PlayerController
             yield break; // Stop the coroutine if no tile data exists
         }
 
+        // Set the player hud to active
+        m_playerHUDLocal.SetActive(true);
+
         // Continue updating health until it reaches max health
         while (tileData.CurrentHealth < tileData.MaxHealth)
         {
@@ -260,6 +266,17 @@ public class PlayerControllerBuilder : PlayerController
             // Add either the increment or the remaining health, whichever is smaller
             float healthToAdd = Mathf.Min(healthIncrement, remainingHealth);
             m_tileManager.SetTileHealth(m_buildTileLocation, healthToAdd);
+
+            // Get tiles health values
+            float? currentHealth = m_tileManager.GetTileHealth(m_buildTileLocation);
+            float? maxHealth = m_tileManager.GetMaxHealth(m_buildTileLocation);
+
+            float percentage = (currentHealth.Value / maxHealth.Value); // Percentage between 0 and 1 for slider
+
+            if (currentHealth.HasValue) 
+            {
+                m_playerHUDLocal.GetComponentInChildren<Slider>().value = percentage; 
+            }
 
             Debug.Log($"Added {healthToAdd} health to tile at {m_buildTileLocation}. Current health: {tileData.CurrentHealth}");
 
@@ -271,6 +288,12 @@ public class PlayerControllerBuilder : PlayerController
         }
 
         Debug.Log($"Building at {m_buildTileLocation} has reached max health: {tileData.MaxHealth}");
+
+        // Hide the slider
+        m_playerHUDLocal.SetActive(false);
+
+        // Reset the slider value to 0
+        m_playerHUDLocal.GetComponentInChildren<Slider>().value = 0;
 
         // Call the server to set the tile
         SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false);
