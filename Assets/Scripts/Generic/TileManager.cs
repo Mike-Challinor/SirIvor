@@ -18,8 +18,8 @@ public class TileManager : MonoBehaviour
     private List<string> m_tileTypeNames;
 
     [SerializeField] private float m_fenceHealth = 100f;
-    [SerializeField] private float m_buildingHealth = 200f;
-    [SerializeField] private float m_platformHealth = 500f;
+    [SerializeField] private float m_buildingHealth = 500f;
+    [SerializeField] private float m_platformHealth = 200f;
 
     public struct TileData
     {
@@ -123,7 +123,7 @@ public class TileManager : MonoBehaviour
         Debug.Log($"Building group created with tiles from {position} to {(position.x + 9, position.y + 2)}");
     }
 
-    private void AddTileToGroup(TileGroup group, Vector3Int tilePosition, string type)
+    public void AddTileToGroup(TileGroup group, Vector3Int tilePosition, string type)
     {
         if (m_tilemap.HasTile(tilePosition))
         {
@@ -207,6 +207,32 @@ public class TileManager : MonoBehaviour
         {
             Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
         }
+    }
+
+    public bool IsTileInGroup(Vector3Int tilePosition)
+    {
+        // Check if the tile is part of any group
+        foreach (TileGroup group in m_tileGroups)
+        {
+            if (group.GetTiles().Contains(tilePosition))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public TileGroup GetTileGroup(Vector3Int tilePosition)
+    {
+        // Find and return the group the tile belongs to
+        foreach (TileGroup group in m_tileGroups)
+        {
+            if (group.GetTiles().Contains(tilePosition))
+            {
+                return group;
+            }
+        }
+        return null; // Return null if no group is found
     }
 
 

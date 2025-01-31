@@ -3,8 +3,8 @@ using UnityEngine.Tilemaps;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UIElements;
-using static UnityEditor.PlayerSettings;
+using UnityEngine.UI;
+using Unity.VisualScripting;
 
 public class PlayerControllerBuilder : PlayerController
 {
@@ -14,29 +14,48 @@ public class PlayerControllerBuilder : PlayerController
     private Tilemap m_buildModeTilemap;
     private Tilemap m_structuresTilemap;
     private Vector3Int m_buildTileLocation;
-    private float m_buildDistance = 1.5f;
+    private float m_buildDistance = 2f;
     private TileManager m_tileManager;
+    private int m_currentSelectedStructure = 0;
+    private TileBase[][] m_objectTileArray;
 
     [SerializeField] private bool m_isBuilding = false;
     [SerializeField] private bool m_startBuilding = false;
     [SerializeField] private bool m_canBuild = false;
     [SerializeField] private bool m_isBuildMode = false;
-    [SerializeField] private TileBase[] m_TileArray;
+    [SerializeField] public TileBase[] m_platformTileArray;
+    [SerializeField] public TileBase[] m_fenceTileArray;
     [SerializeField] private Tilemap[] m_TilemapArray;
     [SerializeField] private GameObject m_buildSprite;
+    [SerializeField] private GameObject m_playerHUDLocal;
 
     private float lastUpdateTime = 0f;
     private const float updateInterval = 0.05f; // 50ms interval for updates
     private Dictionary<Vector3Int, TileBase> localTileCache = new Dictionary<Vector3Int, TileBase>();
+
+    private enum SelectedStructure
+    {
+        Fence,
+        Platform
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     protected override void Start()
     {
         base.Start();
 
-        if (m_TileArray.Length > 0)
+        // Ensure m_objectTileArray is initialized
+        m_objectTileArray = new TileBase[2][];  // 2 for Fence and Platform
+
+        if (m_platformTileArray.Length > 0)
         {
-            m_equippedTile = m_TileArray[0];
+            m_objectTileArray[0] = m_platformTileArray; // Add the platform tiles to the object array
+            m_equippedTile = m_objectTileArray[m_currentSelectedStructure][0];  // Set the equipped tile
+        }
+
+        if (m_fenceTileArray.Length > 0)
+        {
+            m_objectTileArray[1] = m_fenceTileArray; // Add the fence tiles to the object array
         }
 
         if (m_equippedTile != null) { SetSprite(m_equippedTile); }
@@ -53,6 +72,7 @@ public class PlayerControllerBuilder : PlayerController
         m_TilemapArray[1] = m_structuresTilemap;
         m_tileManager = GameObject.FindWithTag("Tilemanager").GetComponent<TileManager>();
     }
+
 
     // Update is called once per frame
     protected override void Update()
@@ -95,56 +115,126 @@ public class PlayerControllerBuilder : PlayerController
         {
             lastUpdateTime = Time.time;
 
-            // Check if the position has changed or the cache doesn't match
-            if (cellPosition != m_buildTileLocation || !localTileCache.ContainsKey(cellPosition))
+            // Remove the previous tiles immediately
+            foreach (var cachedTile in localTileCache)
             {
-                // Remove the previous tile immediately
-                if (localTileCache.ContainsKey(m_buildTileLocation))
+                m_buildModeTilemap.SetTile(cachedTile.Key, null);
+            }
+            localTileCache.Clear(); // Clear cache for all previously placed tiles
+
+            // Update the build location
+            m_buildTileLocation = cellPosition;
+
+            // Set new tiles if equipped
+            if (m_equippedTile != null && m_objectTileArray[m_currentSelectedStructure] != null)
+            {
+                TileBase[] tilesToPlace = m_objectTileArray[m_currentSelectedStructure];  // Get tile array
+
+                if (tilesToPlace.Length >= 4)  // Ensure there are at least 4 tiles
                 {
-                    m_buildModeTilemap.SetTile(m_buildTileLocation, null);
-                    localTileCache.Remove(m_buildTileLocation); // Clear cache for the old location
+                    // Define L-shaped placement pattern
+                    Vector3Int[] offsets = new Vector3Int[]
+                    {
+                    new Vector3Int(0, 0, 0),  // Base tile (Bottom Left)
+                    new Vector3Int(1, 0, 0),  // Right of base
+                    new Vector3Int(0, 1, 0),  // Above base
+                    new Vector3Int(1, 1, 0)   // Above right tile
+                    };
+
+                    for (int i = 0; i < offsets.Length; i++)
+                    {
+                        Vector3Int tilePosition = cellPosition + offsets[i];
+                        TileBase tile = tilesToPlace[i];
+
+                        m_buildModeTilemap.SetTile(tilePosition, tile);
+                        localTileCache[tilePosition] = tile;
+
+                        // Sync each tile with the server
+                        SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
+                    }
                 }
 
-                // Update the build location
-                m_buildTileLocation = cellPosition;
-
-                // Set a new tile if equipped
-                if (m_equippedTile != null)
-                {
-                    TileBase tile = m_equippedTile;
-
-                    // Update locally
-                    m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
-                    localTileCache[m_buildTileLocation] = tile;
-
-                    // Sync with the server
-                    SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
-                }
                 else
                 {
-                    Debug.Log("Equipped tile is null");
-                }
-
-                // Check if the tile can be built at the location
-                if (m_structuresTilemap != null)
-                {
-                    TileBase structureTile = m_structuresTilemap.GetTile(cellPosition);
-                    m_buildModeTilemap.color = structureTile == null ? Color.white : Color.red;
-                    m_canBuild = structureTile == null ? true : false;
-                }
-                else
-                {
-                    m_canBuild = false;
-                    Debug.Log("PLAYERCONTROLLERBUILDER::UPDATE:: Structures tilemap is null");
+                    TileBase tile = tilesToPlace[0];
+                    m_buildModeTilemap.SetTile(cellPosition, tile);
+                    localTileCache[cellPosition] = tile;
+                    SetTileOnServerRpc(cellPosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
                 }
             }
             else
             {
-                // Force synchronization if a desync is detected
-                SyncTilesWithServer();
+                Debug.LogError("Equipped tile is null or structure array is empty");
+            }
+
+            // Check if the tile can be built at the location
+            if (m_structuresTilemap != null)
+            {
+                bool canBuildAtAllTiles = true; // Assume we can build until proven otherwise
+
+                // Get the tile positions based on the offsets (for L-shaped, for example)
+                List<Vector3Int> tilePositions = new List<Vector3Int>();
+
+                // Add the base tile and the offsets to the list of positions
+                TileBase[] tilesToPlace = m_objectTileArray[m_currentSelectedStructure]; // Get tile array
+                if (tilesToPlace.Length >= 4)  // L-shaped placement
+                {
+                    Vector3Int[] offsets = new Vector3Int[]
+                    {
+                        new Vector3Int(0, 0, 0), // Base tile (Bottom Left)
+                        new Vector3Int(1, 0, 0), // Right of base
+                        new Vector3Int(0, 1, 0), // Above base
+                        new Vector3Int(1, 1, 0)  // Above right tile
+                    };
+
+                    foreach (var offset in offsets)
+                    {
+                        tilePositions.Add(m_buildTileLocation + offset);
+                    }
+                }
+                else // For a single tile
+                {
+                    tilePositions.Add(m_buildTileLocation);
+                }
+
+                // Iterate through each tile position and check if it can be built
+                foreach (var tilePosition in tilePositions)
+                {
+                    TileBase structureTile = m_structuresTilemap.GetTile(tilePosition);
+
+                    // If any tile is not buildable (i.e., it is occupied), we cannot build the structure
+                    if (structureTile != null)
+                    {
+                        m_buildModeTilemap.color = Color.red;
+                        canBuildAtAllTiles = false; // Mark that building is not allowed
+                        break; // Break out of loop
+                    }
+                }
+
+                // Set the build mode color and state
+                if (canBuildAtAllTiles)
+                {
+                    m_buildModeTilemap.color = Color.white;
+                    m_canBuild = true; // All tiles are free to build
+                }
+                else
+                {
+                    m_canBuild = false; // At least one tile is blocked
+                }
+            }
+            else
+            {
+                m_canBuild = false;
+                Debug.LogError("PLAYERCONTROLLERBUILDER::UPDATE:: Structures tilemap is null");
             }
         }
+        else
+        {
+            // Force synchronization if a desync is detected
+            SyncTilesWithServer();
+        }
     }
+
 
     private void MovePlayerToBuildLocation(Vector3Int tileLocation, float speed)
     {
@@ -201,6 +291,15 @@ public class PlayerControllerBuilder : PlayerController
     public void DisableBuildMode()
     {
         Debug.Log("PLAYERCONTROLLERBUILDER::DISABLEBUILDMODE:: Function called");
+
+        // Iterate through the localTileCache and remove each tile from the build mode tilemap
+        foreach (var tilePosition in localTileCache.Keys)
+        {
+            m_buildModeTilemap.SetTile(tilePosition, null); // Remove the tile at the position
+        }
+
+        localTileCache.Clear(); // Clear the tile cache
+
         SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, false);
         m_canBuild = false;
     }
@@ -216,10 +315,22 @@ public class PlayerControllerBuilder : PlayerController
             m_RB.linearVelocity = Vector2.zero;
             m_playerInputHandler.SetCanMove(false);
 
-            // Sync with the server
-            Debug.Log($"Tilemap index is: " + GetTilemapIndex(m_structuresTilemap));
-            Debug.Log($"Tile index is: " + GetTileIndex(m_equippedTile));
-            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, true);
+            TileBase[] tilesToPlace = m_objectTileArray[m_currentSelectedStructure];  // Get tile array
+
+            if (tilesToPlace.Length >= 4)  // Ensure there are at least 4 tiles
+            {
+                SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, true);
+            }
+
+            else
+            {
+                TileBase tile = tilesToPlace[0];
+                m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
+                localTileCache[m_buildTileLocation] = tile;
+
+                // Sync each tile with the server
+                SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, true);
+            }
 
         }
 
@@ -234,9 +345,40 @@ public class PlayerControllerBuilder : PlayerController
     {
         Debug.Log("PLAYERCONTROLLER::BUILDINGTIMER:: Function called...");
 
-        // Add the tile to the tile manager
-        m_tileManager.AddSingleSprite(m_buildTileLocation, 0, GetMaxHealthOfTileToBuild(), m_tileManager.GetTileTypeFromArrays(m_equippedTile)); // Set starting health to 0
-        
+        if (m_objectTileArray[m_currentSelectedStructure].Length >= 4)  // Ensure there are at least 4 tiles
+        {
+            // Create a new tile group
+            TileGroup tileGroup = m_tileManager.CreateTileGroup(200);
+
+            // Define L-shaped placement pattern
+            Vector3Int[] offsets = new Vector3Int[]
+            {
+                    new Vector3Int(0, 0, 0),  // Base tile (Bottom Left)
+                    new Vector3Int(1, 0, 0),  // Right of base
+                    new Vector3Int(0, 1, 0),  // Above base
+                    new Vector3Int(1, 1, 0)   // Above right tile
+            };
+
+            // Add each tile to the group
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                Vector3Int tilePosition = m_buildTileLocation + offsets[i];
+
+                // Add tile to the group
+                m_tileManager.AddTileToGroup(tileGroup, tilePosition, "Platform");
+            }
+
+            // Update tile groups health and set it to 0
+            m_tileManager.UpdateTileGroupHealth(tileGroup, -200);
+        }
+
+        else
+        {
+            // Add the tile to the tile manager
+            m_tileManager.AddSingleSprite(m_buildTileLocation, 0, GetMaxHealthOfTileToBuild(), m_tileManager.GetTileTypeFromArrays(m_equippedTile)); // Set starting health to 0
+        }
+
+        // Wait for building progress
         yield return StartCoroutine(BuildingProgressTimer()); // Wait for timer for adding health / building
 
         CancelBuilding();
@@ -254,6 +396,9 @@ public class PlayerControllerBuilder : PlayerController
             yield break; // Stop the coroutine if no tile data exists
         }
 
+        // Set the player HUD to active
+        m_playerHUDLocal.SetActive(true);
+
         // Continue updating health until it reaches max health
         while (tileData.CurrentHealth < tileData.MaxHealth)
         {
@@ -263,7 +408,25 @@ public class PlayerControllerBuilder : PlayerController
             float healthToAdd = Mathf.Min(healthIncrement, remainingHealth);
             m_tileManager.SetTileHealth(m_buildTileLocation, healthToAdd);
 
+            // Get tile's health values
+            float? currentHealth = m_tileManager.GetTileHealth(m_buildTileLocation);
+            float? maxHealth = m_tileManager.GetMaxHealth(m_buildTileLocation);
+
+            float percentage = (currentHealth.Value / maxHealth.Value); // Percentage between 0 and 1 for the slider
+
+            if (currentHealth.HasValue)
+            {
+                m_playerHUDLocal.GetComponentInChildren<Slider>().value = percentage;
+            }
+
             Debug.Log($"Added {healthToAdd} health to tile at {m_buildTileLocation}. Current health: {tileData.CurrentHealth}");
+
+            // Check if the tile is part of a group and update health across the group
+            if (m_tileManager.IsTileInGroup(m_buildTileLocation))
+            {
+                TileGroup tileGroup = m_tileManager.GetTileGroup(m_buildTileLocation);
+                m_tileManager.UpdateTileGroupHealth(tileGroup, healthToAdd); // Update health of the whole group
+            }
 
             // Wait for the interval before the next update
             yield return new WaitForSeconds(buildInterval);
@@ -274,9 +437,28 @@ public class PlayerControllerBuilder : PlayerController
 
         Debug.Log($"Building at {m_buildTileLocation} has reached max health: {tileData.MaxHealth}");
 
-        // Call the server to set the tile
-        SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(m_equippedTile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false);
+        // Hide the slider
+        m_playerHUDLocal.SetActive(false);
+
+        // Reset the slider value to 0
+        m_playerHUDLocal.GetComponentInChildren<Slider>().value = 0;
+
+        TileBase[] tilesToPlace = m_objectTileArray[m_currentSelectedStructure];  // Get tile array
+
+        if (tilesToPlace.Length >= 4)  // Ensure there are at least 4 tiles
+        {
+            SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, false);
+        }
+        else
+        {
+            TileBase tile = tilesToPlace[0];
+            m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
+
+            // Sync each tile with the server
+            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false);
+        }
     }
+
 
     public void CancelBuilding()
     {
@@ -284,7 +466,6 @@ public class PlayerControllerBuilder : PlayerController
         m_startBuilding = false;
         m_playerInputHandler.SetCanMove(true);
     }
-
     private float GetMaxHealthOfTileToBuild()
     {
         return m_tileManager.GetMaxHealthByType(m_tileManager.GetTileTypeFromArrays(m_equippedTile));
@@ -293,6 +474,32 @@ public class PlayerControllerBuilder : PlayerController
     private void SetSprite(TileBase tile)
     {
         m_equippedTile = tile;
+    }
+
+    private void SetMultipleSprites(TileBase[] tileArray, bool justOwner, bool isOpaque)
+    {
+        TileBase[] tilesToPlace = tileArray;  // Get tile array
+
+        // Define L-shaped placement pattern
+        Vector3Int[] offsets = new Vector3Int[]
+        {
+                    new Vector3Int(0, 0, 0),  // Base tile (Bottom Left)
+                    new Vector3Int(1, 0, 0),  // Right of base
+                    new Vector3Int(0, 1, 0),  // Above base
+                    new Vector3Int(1, 1, 0)   // Above right tile
+        };
+
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            Vector3Int tilePosition = m_buildTileLocation + offsets[i];
+            TileBase tile = tilesToPlace[i];
+
+            m_structuresTilemap.SetTile(tilePosition, tile);
+            localTileCache[tilePosition] = tile;
+
+            // Sync each tile with the server
+            SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), justOwner, isOpaque);
+        }
     }
 
     public void FlipBuildSprite(bool isFacingRight)
@@ -334,14 +541,20 @@ public class PlayerControllerBuilder : PlayerController
         {
             if (OwnerClientId == networkObjectId && IsOwner)
             {
-                TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+                // Make sure we are getting the correct tile from the selected structure
+                TileBase tile = tileIndex >= 0 && tileIndex < m_objectTileArray[m_currentSelectedStructure].Length
+                    ? m_objectTileArray[m_currentSelectedStructure][tileIndex]
+                    : null;
                 m_TilemapArray[tilemapindex].SetTile(position, tile);
             }
         }
-
         else // When the tile should show for everyone
         {
-            TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+            // Adjust the logic for tileIndex retrieval based on your current structure
+            TileBase tile = tileIndex >= 0 && tileIndex < m_objectTileArray[m_currentSelectedStructure].Length
+                ? m_objectTileArray[m_currentSelectedStructure][tileIndex]
+                : null;
+
             m_TilemapArray[tilemapindex].SetTile(position, tile);
             m_TilemapArray[tilemapindex].SetTileFlags(position, TileFlags.None);
 
@@ -349,16 +562,16 @@ public class PlayerControllerBuilder : PlayerController
             {
                 m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the sprite to be transparent
             }
-
             else
             {
-                m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid colour
+                m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid color
             }
         }
-        
 
+        // Ensure that the update happens across clients as well
         UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner, isopaque);
     }
+
 
     [Rpc(SendTo.NotServer)]
     void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isOpaque)
@@ -367,7 +580,10 @@ public class PlayerControllerBuilder : PlayerController
         {
             if (OwnerClientId == networkObjectId && IsOwner)
             {
-                TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+                // Make sure we get the correct tile from the selected structure
+                TileBase tile = tileIndex >= 0 && tileIndex < m_objectTileArray[m_currentSelectedStructure].Length
+                    ? m_objectTileArray[m_currentSelectedStructure][tileIndex]
+                    : null;
 
                 if (m_TilemapArray[tilemapindex] != null)
                 {
@@ -375,10 +591,12 @@ public class PlayerControllerBuilder : PlayerController
                 }
             }
         }
-
         else // When the tile should show for everyone
         {
-            TileBase tile = tileIndex >= 0 && tileIndex < m_TileArray.Length ? m_TileArray[tileIndex] : null;
+            // Adjust the tile retrieval logic to use m_objectArray
+            TileBase tile = tileIndex >= 0 && tileIndex < m_objectTileArray[m_currentSelectedStructure].Length
+                ? m_objectTileArray[m_currentSelectedStructure][tileIndex]
+                : null;
 
             if (m_TilemapArray[tilemapindex] != null)
             {
@@ -390,27 +608,27 @@ public class PlayerControllerBuilder : PlayerController
                 {
                     m_TilemapArray[tilemapindex].SetColor(position, new Color(0, 0, 0, 0.3f)); // Set the sprite to be transparent
                 }
-
                 else
                 {
-                    m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid colour
+                    m_TilemapArray[tilemapindex].SetColor(position, Color.white); // Make the sprite a solid color
                 }
             }
-
         }
-        
     }
+
 
     private int GetTileIndex(TileBase tile)
     {
-        for (int i = 0; i < m_TileArray.Length; i++)
+        // Iterate through the selected structure's tile array
+        TileBase[] selectedStructureTiles = m_objectTileArray[m_currentSelectedStructure];
+        for (int i = 0; i < selectedStructureTiles.Length; i++)
         {
-            if (m_TileArray[i] == tile)
+            if (selectedStructureTiles[i] == tile)
             {
                 return i;
             }
         }
-        return -1;
+        return -1; // Return -1 if the tile is not found
     }
 
     private int GetTilemapIndex(Tilemap tilemap)

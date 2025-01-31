@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
+using UnityEngine.U2D;
 
 public class Player_Input_Handler : NetworkBehaviour
 {
     private Rigidbody2D m_RB;
     private Vector2 m_moveInput;
+    private float m_camInput;
     private SpriteRenderer m_playerSprite;
     private Transform m_playerTransform;
     protected PlayerInputAction m_PlayerActions;
@@ -31,7 +33,7 @@ public class Player_Input_Handler : NetworkBehaviour
         // Listen for movement input
         m_PlayerActions.Player.Move.performed += ctx => m_moveInput = ctx.ReadValue<Vector2>();
         // Stop movement on release
-        m_PlayerActions.Player.Move.canceled += ctx => m_moveInput = Vector2.zero; 
+        m_PlayerActions.Player.Move.canceled += ctx => m_moveInput = Vector2.zero;
 
     }
 
@@ -45,6 +47,7 @@ public class Player_Input_Handler : NetworkBehaviour
     protected virtual void Update()
     {
         if (!IsOwner) return;
+
         MovePlayer();
     }
 
