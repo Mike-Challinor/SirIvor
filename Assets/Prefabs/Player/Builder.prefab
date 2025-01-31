@@ -488,6 +488,14 @@ PrefabInstance:
       propertyPath: m_Offset.y
       value: 0.00042319298
       objectReference: {fileID: 0}
+    - target: {fileID: 8226000858487037953, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
+      propertyPath: m_RefResolutionX
+      value: 640
+      objectReference: {fileID: 0}
+    - target: {fileID: 8226000858487037953, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
+      propertyPath: m_RefResolutionY
+      value: 384
+      objectReference: {fileID: 0}
     - target: {fileID: 8322286110501599423, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2609573389
@@ -540,13 +548,18 @@ MonoBehaviour:
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
   m_playerInputHandler: {fileID: 0}
-  m_moveSpeed: 5
+  m_moveSpeed: 7
   m_isBuilding: 0
   m_startBuilding: 0
   m_canBuild: 0
   m_isBuildMode: 0
-  m_TileArray:
+  m_platformTileArray:
   - {fileID: 11400000, guid: 27788e4d697555140b8fad6cf4d9b039, type: 2}
+  - {fileID: 11400000, guid: 0145ac062c26146488c3b47fb1f04bcb, type: 2}
+  - {fileID: 11400000, guid: 2617bb1fc71afbc41884214502bfd637, type: 2}
+  - {fileID: 11400000, guid: a56a2383dfd50774697c0e68e0c78189, type: 2}
+  m_fenceTileArray:
+  - {fileID: 11400000, guid: 7b46335d5f00e764b952b872b1e6efec, type: 2}
   m_TilemapArray:
   - {fileID: 0}
   - {fileID: 0}

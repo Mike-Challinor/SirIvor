@@ -439,9 +439,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ComponentVersion: 1
-  m_AssetsPPU: 16
-  m_RefResolutionX: 320
-  m_RefResolutionY: 180
+  m_AssetsPPU: 24
+  m_RefResolutionX: 640
+  m_RefResolutionY: 384
   m_CropFrame: 0
   m_GridSnapping: 0
   m_FilterMode: 0
@@ -673,7 +673,7 @@ MonoBehaviour:
   m_mainCamera: {fileID: 0}
   m_playerCamera: {fileID: 0}
   m_playerInputHandler: {fileID: 0}
-  m_moveSpeed: 5
+  m_moveSpeed: 6
 --- !u!114 &8526498929077234573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -689,6 +689,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
   m_canMove: 1
+  m_playerCamera: {fileID: 1766169810718581833}
 --- !u!114 &919939198448878564
 MonoBehaviour:
   m_ObjectHideFlags: 0

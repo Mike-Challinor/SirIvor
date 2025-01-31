@@ -104,21 +104,7 @@ public class PlayerController : NetworkBehaviour
 
                 }
             }
-
-
-            // Control camera zoom
-            if (Input.GetAxisRaw("Mouse ScrollWheel") > 0)
-            {
-                // Zoom in (decrease orthographic size)
-                m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize - 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
-            }
-            else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0)
-            {
-                // Zoom out (increase orthographic size)
-                m_playerCamera.orthographicSize = Mathf.Clamp(m_playerCamera.orthographicSize + 0.5f, m_cameraMinZoom, m_cameraMaxZoom);
-            }
         }
-        
     }
 
 
