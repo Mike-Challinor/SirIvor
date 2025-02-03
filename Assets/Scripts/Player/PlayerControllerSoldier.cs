@@ -1,180 +1,299 @@
 using UnityEngine;
+using Unity.Netcode;
 using UnityEngine.Tilemaps;
+using System.Collections;
 
 public class PlayerControllerSoldier : PlayerController
 {
-    private bool m_shootMode = false;
-    [SerializeField] private bool m_canInteract = false;
     private float m_interactDistance = 1f;
     private Tilemap m_structuresTilemap;
     private TileManager m_tileManager;
     private Vector3 m_returnPosition;
     private Vector3 m_platformPosition;
+    private Vector2 m_lastDirection = Vector2.right; // Default to right facing
+    private Color m_gizmoColour = Color.red;
 
-    [SerializeField] TileBase[] m_platformArray;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    [SerializeField] private TileBase[] m_platformArray;
+    [SerializeField] private GameObject m_projectilePrefab;
+    [SerializeField] private GameObject m_firePoint;
+    [SerializeField] private GameObject m_gunPosition;
+
+    [SerializeField] private bool m_canInteract = false;
+    [SerializeField] private bool m_shootMode = false;
+    [SerializeField] private bool m_isAttacking = false;
+    [SerializeField] private bool m_canAttack = false;
+
+    [SerializeField] private float m_attackTimer = 0.5f;
+
+    private NetworkVariable<Vector3> firePointPosition = new NetworkVariable<Vector3>(
+    default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+
     protected override void Start()
     {
         base.Start();
+        m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap")?.GetComponent<Tilemap>();
+        m_tileManager = GameObject.FindWithTag("Tilemanager")?.GetComponent<TileManager>();
 
-        // Get references
-        m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
-        m_tileManager = GameObject.FindWithTag("Tilemanager").GetComponent<TileManager>();
+        // Ensure fire point is updated when the variable changes
+        firePointPosition.OnValueChanged += (oldValue, newValue) =>
+        {
+            m_firePoint.transform.position = newValue;
+        };
     }
 
-    // Update is called once per frame
     protected override void Update()
     {
         base.Update();
 
-        if (!IsOwner) { return; }
+        if (!IsOwner) return;
 
-        // Check if near to a platform
+        UpdateMovementDirection(); // Update movement direction for line trace
 
-        // Logic when in shoot mode
-        if (m_shootMode)
+        CheckForPlatform(); // Check for platform to interact with
+
+        if (m_shootMode && IsMouseWithinScreen() && Application.isFocused) // Track mouse position when in shoot mode
         {
-
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.CompareTag("StructuresTilemap"))
-        {
-            Debug.Log("Near to a structure");
-
-
-            // Get the collision point
-            Vector2 collisionPoint = collision.ClosestPoint(transform.position);
-
-            // Convert world position to tilemap cell position
-            Vector3Int collidedTile = m_structuresTilemap.WorldToCell(collisionPoint);
-            Debug.Log($"Collided tile position: {collidedTile}");
-
-            // Check if the tile belongs to a platform
-            TileBase tile = m_structuresTilemap.GetTile(collidedTile);
-            if (tile != null && m_tileManager.GetTileTypeFromArrays(tile) == "Platform")
+            if (!m_playerHUD.GetReticleStatus()) // Show the players reticle
             {
-                if (!m_canInteract)
-                {
-                    m_canInteract = true;
-                }
-
-                Vector3Int cellPosition;
-                Vector3 position = new Vector3(0, 0, 0);
-
-                for (int i = 0; i < 4; i++)
-                {
-                    if (m_platformArray[i] == m_structuresTilemap.GetTile(collidedTile) || m_platformArray[i + 4] == m_structuresTilemap.GetTile(collidedTile))
-                    {
-                        switch (i)
-                        {
-                            case 0: //Bottom left tile
-                                cellPosition = new Vector3Int(collidedTile.x, collidedTile.y + 1, 0);
-                                position = m_structuresTilemap.CellToWorld(cellPosition);
-                                break;
-
-                            case 1: //Bottom right tile
-                                cellPosition = new Vector3Int(collidedTile.x - 1, collidedTile.y + 1, 0);
-                                position = m_structuresTilemap.CellToWorld(cellPosition);
-                                break;
-
-                            case 2: //Top left tile
-                                cellPosition = collidedTile;
-                                position = m_structuresTilemap.CellToWorld(cellPosition);
-                                break;
-
-                            case 3: //Top right tile
-                                cellPosition = new Vector3Int(collidedTile.x + 1, collidedTile.y, 0);
-                                position = m_structuresTilemap.CellToWorld(cellPosition);
-                                break;
-
-                        }
-                    }
-                }
-
-                // Convert tile position to world position and adjust player position
-                m_platformPosition = position + new Vector3(0.5f, 0.5f, 0);
-                Debug.Log($"Moving player to: {m_platformPosition}");
-
+                m_playerHUD.SetReticleStatus(true);
             }
 
+            m_playerHUD.SetReticlePosition(Input.mousePosition);
+
+            SetFirepointPosition();
+
         }
-    }
 
-
-    private void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.CompareTag("StructuresTilemap"))
+        else
         {
-            Debug.Log("Left structure range");
-
-            // Get the closest collision point
-            Vector2 collisionPoint = collision.ClosestPoint(transform.position);
-
-            // Convert the world position to a tile cell position
-            Vector3Int cellPosition = m_structuresTilemap.WorldToCell(collisionPoint);
-
-            TileBase tile = m_structuresTilemap.GetTile(cellPosition);
-
-            if (tile != null && m_tileManager.GetTileTypeFromArrays(tile) == "Platform")
+            if (m_playerHUD.GetReticleStatus())
             {
-                if (m_canInteract)
-                {
-                    m_canInteract = false;
-                }
-
-                Debug.Log(" Structure was a platform");
+                m_playerHUD.SetReticleStatus(false);
             }
         }
     }
 
-    public void Shoot()
+    private void UpdateMovementDirection()
     {
-        Debug.Log("Shoot");
+        Vector2 inputDirection = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+
+        if (inputDirection != Vector2.zero)
+        {
+            m_lastDirection = inputDirection.normalized;
+        }
+    }
+
+    private void SetFirepointPosition()
+    {
+        Vector3 direction = (GetMousePos() - transform.position).normalized;
+        Vector3 newFirePointPosition = transform.position + (direction * 0.8f);
+
+        // Update local firePoint
+        m_firePoint.transform.position = newFirePointPosition;
+
+        // Rotate firePoint to face the mouse direction
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        m_firePoint.transform.rotation = Quaternion.Euler(0, 0, angle);
+
+        if (direction.x > 0)
+        {
+            m_gunPosition.transform.position = new Vector3(transform.position.x + 0.5f, transform.position.y, 0);
+        }
+        else if (direction.x < 0)
+        {
+            m_gunPosition.transform.position = new Vector3(transform.position.x - 0.5f, transform.position.y, 0);
+        }
+
+        // Update the NetworkVariable so other clients see the correct position
+        if (IsOwner)
+        {
+            firePointPosition.Value = newFirePointPosition;
+        }
+    }
+
+
+    [Rpc(SendTo.Server)]
+    private void SetFirepointPositionRpc(Vector3 newPosition)
+    {
+        firePointPosition.Value = newPosition;
+        m_firePoint.transform.position = newPosition;
+    }
+
+
+    private void CheckForPlatform()
+    {
+        int layerMask = ~LayerMask.GetMask("Player"); // Ignore Player layer
+
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, m_lastDirection, m_interactDistance, layerMask);
+        if (hit.collider != null && hit.collider.CompareTag("StructuresTilemap"))
+        {
+            Vector3Int tilePosition = m_structuresTilemap.WorldToCell(hit.point);
+            TileBase tile = m_structuresTilemap.GetTile(tilePosition);
+
+            if (tile != null && m_tileManager.GetTileTypeFromArrays(tile) == "Platform" && m_canInteract == false)
+            {
+                m_canInteract = true;
+                m_gizmoColour = Color.green;
+                m_platformPosition = GetPlatformPosition(tilePosition);
+                Debug.Log($"Near a platform, setting interaction: {m_canInteract}");
+            }
+        }
+
+        else
+        {
+            if (m_canInteract == true)
+            {
+                m_canInteract = false;
+                Debug.Log($"Can no longer interact with platform, setting interaction: {m_canInteract}");
+                m_gizmoColour = Color.red;
+            }
+        }
+    }
+
+
+    private Vector3 GetPlatformPosition(Vector3Int tilePosition)
+    {
+        Debug.Log($"Tile position = {tilePosition}");
+        for (int i = 0; i < 4; i++)
+        {
+            if (m_platformArray[i] == m_structuresTilemap.GetTile(tilePosition) || m_platformArray[i + 4] == m_structuresTilemap.GetTile(tilePosition))
+            {
+                Vector3Int newCellPos = i switch
+                {
+                    0 => new Vector3Int(tilePosition.x, tilePosition.y + 1, 0),
+                    1 => new Vector3Int(tilePosition.x - 1, tilePosition.y + 1, 0),
+                    2 => tilePosition,
+                    3 => new Vector3Int(tilePosition.x - 1, tilePosition.y, 0),
+                    _ => tilePosition
+                };
+
+                Debug.Log($"Cell position = {newCellPos}");
+
+                return m_structuresTilemap.CellToWorld(newCellPos) + new Vector3(1f, 0.5f, 0);
+            }
+        }
+
+        return tilePosition;
     }
 
     public void SetShootMode()
     {
         if (m_shootMode)
         {
-            Debug.Log("Moving player to the platforms position");
-            transform.position = m_returnPosition;
+            transform.position = m_returnPosition; // Set the return position for the player
+            m_gunPosition.SetActive(false); // Hide the players gun sprite
         }
-
         else
         {
-            m_canInteract = false;
-            m_returnPosition = transform.position;
-            transform.position = m_platformPosition; 
-
-            Debug.Log("Moving player from the platforms position");
+            m_RB.linearVelocity = Vector2.zero; // Zero the players velocity
+            m_gunPosition.SetActive(true); // Show the players gun sprite
+            m_canAttack = true;
+            m_returnPosition = transform.position; // Set the position for the player to return to when exiting shoot mode
+            transform.position = m_platformPosition; // Set players position to the platforms position
         }
 
         m_shootMode = !m_shootMode;
-
     }
 
-    public bool GetInteractStatus()
+    public void InitiateAttack()
     {
-        return m_canInteract;
+        Debug.Log("Initiate Attack function called...");
+
+        if (IsMouseWithinScreen())
+        {
+            m_isAttacking = true;
+            StartCoroutine(Attack());
+        }
     }
 
-    public bool GetShootStatus()
+    private IEnumerator Attack()
     {
-        return m_shootMode;
+        while (m_isAttacking)
+        {
+            SpawnProjectileRpc();
+
+            // Set whether the player can attack
+            m_canAttack = false;
+
+            // Start and wait for attack timer
+            yield return StartCoroutine(AttackTimer());
+
+        }
     }
 
-    public void PositionPlayerOnPlatform()
+    private IEnumerator AttackTimer()
     {
-        
+        yield return new WaitForSeconds(m_attackTimer);
+        m_canAttack = true;
     }
 
-    // Debug function for drawing gizmos of the players's build range
+    public void EndAttack()
+    {
+        m_isAttacking = false;
+    }
+
+    public bool GetCanAttack()
+    {
+        return m_canAttack;
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SpawnProjectileRpc()
+    {
+        Vector3 spawnPos = firePointPosition.Value; // Get the synced position
+
+        if (spawnPos == Vector3.zero)
+        {
+            Debug.LogError("FirePoint position is (0,0,0)! Possible desync.");
+        }
+
+        Debug.Log($"Spawning projectile from: {spawnPos}");
+
+        Vector2 fireDirection = GetFireDirection(spawnPos);
+        float angle = Mathf.Atan2(fireDirection.y, fireDirection.x) * Mathf.Rad2Deg;
+
+        GameObject projectile = Instantiate(m_projectilePrefab, spawnPos, Quaternion.Euler(0, 0, angle - 90f));
+
+        Projectile projectileComponent = projectile.GetComponent<Projectile>();
+
+        if (projectileComponent == null)
+        {
+            Debug.LogError("Projectile component is missing!");
+            return;
+        }
+
+        projectileComponent.SetDirection(fireDirection);
+        NetworkObject networkObject = projectile.GetComponent<NetworkObject>();
+        networkObject.Spawn(true);
+        projectileComponent.SetDirectionRpc(fireDirection);
+    }
+
+    private Vector3 GetMousePos()
+    {
+        // Get mouse position
+        Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
+        mousePos.z = 0; // Ensure z is at the same level as the player
+
+        return mousePos;
+    }
+
+    private Vector3 GetFireDirection(Vector3 startPos)
+    {
+        // Calculate direction to mouse
+        Vector3 direction = (GetMousePos() - startPos).normalized;
+
+        return direction;
+    }
+
+    public bool GetInteractStatus() => m_canInteract;
+    public bool GetShootStatus() => m_shootMode;
+
     private void OnDrawGizmos()
     {
-        Gizmos.DrawWireSphere(transform.position, m_interactDistance);
+        Gizmos.color = m_gizmoColour;
+        Vector3 endPosition = transform.position + (Vector3)m_lastDirection * m_interactDistance;
+        Gizmos.DrawLine(transform.position, endPosition);
     }
 }

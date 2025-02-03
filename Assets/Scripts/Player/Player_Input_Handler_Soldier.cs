@@ -22,20 +22,16 @@ public class Player_Input_Handler_Soldier : Player_Input_Handler
         if (m_PlayerActions != null)
         {
             m_PlayerActions.Enable();
-            Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONENABLE:: Subscribing to Interact.performed...");
             m_PlayerActions.Player.Interact.performed += OnInteractPerformed;
-            Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONENABLE:: Subscription successful.");
-            Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONENABLE:: Subscribing to Select.performed...");
             m_PlayerActions.Player.Select.performed += OnLeftClickPerformed;
-            Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONENABLE:: Subscription successful.");
+            m_PlayerActions.Player.Select.canceled += OnLeftClickReleased;
         }
-
         else
         {
             Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONENABLE:: Subscription unsuccessful.. m_PlayerActions is null.");
         }
-            
     }
+
     protected override void OnDisable()
     {
         Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONDISABLE:: Unsubscribing from BuildMode.performed...");
@@ -65,7 +61,7 @@ public class Player_Input_Handler_Soldier : Player_Input_Handler
             m_soldierControllerScript.SetShootMode();
         }
 
-        else if (!m_soldierControllerScript.GetInteractStatus() && m_soldierControllerScript.GetShootStatus())
+        else if (m_soldierControllerScript.GetShootStatus())
         {
             // Remove player from the platform
             m_soldierControllerScript.SetShootMode();
@@ -76,15 +72,29 @@ public class Player_Input_Handler_Soldier : Player_Input_Handler
 
     private void OnLeftClickPerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)
     {
-        if (!IsOwner || !Application.isFocused)
+        if (!IsOwner || !Application.isFocused) { return; }
+
+        if (m_soldierControllerScript == null)
         {
+            Debug.LogError("PLAYER_INPUT_HANDLER_SOLDIER::m_soldierControllerScript is NULL!");
             return;
         }
 
-        Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONLEFTCLICKPERFORMED:: Executing OnLeftClickPerformed callback");
+        if (m_soldierControllerScript.GetShootStatus() && m_soldierControllerScript.GetCanAttack())
+        {
+            Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONLEFTCLICKPERFORMED:: Executing OnLeftClickPerformed callback");
 
-        m_soldierControllerScript.Shoot();
+            m_soldierControllerScript.InitiateAttack();
+        }
+    }
 
+    private void OnLeftClickReleased(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        if (!IsOwner || !Application.isFocused) { return; }
+
+        Debug.Log("PLAYER_INPUT_HANDLER_SOLDIER::ONLEFTCLICKRELEASED:: Executing OnLeftClickReleased callback");
+
+        m_soldierControllerScript.EndAttack();
     }
 
 }

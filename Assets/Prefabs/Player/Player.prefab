@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7531016345652873872}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Handle Slide Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -47,7 +47,7 @@ GameObject:
   - component: {fileID: 6526584467951413080}
   - component: {fileID: 2234920623265258743}
   - component: {fileID: 8688924385860322140}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -123,7 +123,7 @@ GameObject:
   - component: {fileID: 4172216431162251665}
   - component: {fileID: 3384441772415044947}
   - component: {fileID: 5451042541958566779}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: PlayerHUD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -224,7 +224,7 @@ GameObject:
   - component: {fileID: 6343696833492199637}
   - component: {fileID: 3401118368429954818}
   - component: {fileID: 5763593870921050940}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -301,7 +301,7 @@ GameObject:
   - component: {fileID: 1974835668315029743}
   - component: {fileID: 7948013501101524755}
   - component: {fileID: 8226000858487037953}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -468,7 +468,7 @@ GameObject:
   - component: {fileID: 8526498929077234573}
   - component: {fileID: 919939198448878564}
   - component: {fileID: 7452073993080810485}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -689,7 +689,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
   m_canMove: 1
-  m_playerCamera: {fileID: 1766169810718581833}
 --- !u!114 &919939198448878564
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -730,7 +729,7 @@ GameObject:
   - component: {fileID: 866742732441083478}
   - component: {fileID: 2970517004459312015}
   - component: {fileID: 7683716842894067721}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: HealthSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -833,7 +832,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7452947825343259741}
   - component: {fileID: 7494257989874138692}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -903,7 +902,7 @@ GameObject:
   - component: {fileID: 1612898046494669356}
   - component: {fileID: 852224593415435880}
   - component: {fileID: 1753074826245490808}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -977,7 +976,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4917346711898087742}
   - component: {fileID: 8323070675609591700}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: TriggerCollider
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -1045,7 +1044,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6930925013244124457}
-  m_Layer: 5
+  m_Layer: 3
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}

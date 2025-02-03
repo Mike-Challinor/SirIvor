@@ -7,11 +7,12 @@ TagManager:
   - Tilemanager
   - BuildModeTilemap
   - StructuresTilemap
+  - Resources
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Player
   - Water
   - UI
   - 

@@ -7,6 +7,7 @@ public class PlayerHUD : NetworkBehaviour
 {
     [SerializeField] private GameObject playerHUD;
     [SerializeField] private Slider slider;
+    [SerializeField] private Image m_reticle;
     private bool isHUDActive = false;
 
     public void initHUD(float max_health)
@@ -37,6 +38,21 @@ public class PlayerHUD : NetworkBehaviour
     {
         // Show or hide the HUD
         playerHUD.gameObject.SetActive(isHUDActive);
+    }
+
+    public void SetReticleStatus(bool reticleActive)
+    {
+        m_reticle.gameObject.SetActive(reticleActive);
+    }
+
+    public bool GetReticleStatus()
+    {
+        return m_reticle.gameObject.activeSelf;
+    }
+
+    public void SetReticlePosition(Vector3 mousePos)
+    {
+        m_reticle.transform.position = mousePos;
     }
 
 }
