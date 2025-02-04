@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5537592880882486031}
   m_Layer: 0
   m_Name: ResourceChest
-  m_TagString: Untagged
+  m_TagString: Resources
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

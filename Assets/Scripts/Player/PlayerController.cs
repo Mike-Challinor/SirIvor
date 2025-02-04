@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerController : NetworkBehaviour
 {
     [SerializeField] private NetworkTransform m_playerTransform;
-    [SerializeField] private PlayerHUD m_playerHUD;
+    [SerializeField] protected PlayerHUD m_playerHUD;
     [SerializeField] private HealthComponent m_healthComponent;
     [SerializeField] private Camera m_mainCamera;
     [SerializeField] protected Camera m_playerCamera;
@@ -79,32 +79,7 @@ public class PlayerController : NetworkBehaviour
 
     protected void HandleInput()
     {
-        if (Application.isFocused && IsMouseWithinScreen())
-        {
-            // Get the position of the players cursor 
-            if (m_playerCamera == null)
-            {
-                Debug.Log("PLAYERCONTROLLER::HANDLEINPUT:: Player camera is null");
-            }
-
-            else
-            {
-                // Get mouse position
-                Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
-                mousePos.z = 0; // Ensure z is at the same level as the player
-
-                // Check if the mouse is within the screen boundaries
-                if (Time.timeScale == 1)
-                {
-                    // Calculate direction to mouse
-                    Vector3 direction = (mousePos - transform.position).normalized;
-
-                    // Calculate the rotation angle in radians
-                    float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
-                }
-            }
-        }
+        
     }
 
 
