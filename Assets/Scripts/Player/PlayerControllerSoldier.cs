@@ -28,12 +28,22 @@ public class PlayerControllerSoldier : PlayerController
 
     [SerializeField] private float m_attackTimer = 0.5f;
 
+    NetworkVariable<bool> m_networkGunEnabled = new NetworkVariable<bool>(
+        value: false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+        );
+
+    NetworkVariable<Vector3> m_networkGunPosition = new NetworkVariable<Vector3>();
+
     protected override void Start()
     {
         base.Start();
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap")?.GetComponent<Tilemap>();
         m_tileManager = GameObject.FindWithTag("Tilemanager")?.GetComponent<TileManager>();
 
+        m_networkGunEnabled.OnValueChanged += Handle_NetworkGunEnabled_OnValueChanged;
+        m_networkGunPosition.OnValueChanged += Handle_NetworkGunPosition_OnValueChanged;
     }
 
     protected override void Update()
@@ -46,7 +56,7 @@ public class PlayerControllerSoldier : PlayerController
 
         CheckForPlatform(); // Check for platform to interact with
 
-        if (m_shootMode && IsMouseWithinScreen() && Application.isFocused) // Track mouse position when in shoot mode
+        if (m_shootMode && base.IsMouseWithinScreen() && Application.isFocused) // Track mouse position when in shoot mode
         {
             if (!m_playerHUD.GetReticleStatus()) // Show the players reticle
             {
@@ -92,11 +102,20 @@ public class PlayerControllerSoldier : PlayerController
 
         if (direction.x > 0)
         {
-            m_gunPosition.transform.position = new Vector3(transform.position.x + 0.5f, transform.position.y, 0);
+            m_gunPosition.GetComponent<SpriteRenderer>().flipX = false; // Flip sprite locally
+
+            // Update position on the network variable
+            Vector3 position = new Vector3(transform.position.x + 0.5f, transform.position.y, 0);
+            SetGunPositionRpc(position); 
+            
         }
         else if (direction.x < 0)
         {
-            m_gunPosition.transform.position = new Vector3(transform.position.x - 0.5f, transform.position.y, 0);
+            m_gunPosition.GetComponent<SpriteRenderer>().flipX = true; // Flip sprite locally
+
+            // Update position on the network variable
+            Vector3 position = new Vector3(transform.position.x - 0.5f, transform.position.y, 0);
+            SetGunPositionRpc(position); 
         }
     }
 
@@ -161,12 +180,12 @@ public class PlayerControllerSoldier : PlayerController
         if (m_shootMode)
         {
             transform.position = m_returnPosition; // Set the return position for the player
-            m_gunPosition.SetActive(false); // Hide the players gun sprite
+            SetGunStatusRpc(false); // Hide the players gun sprite
         }
         else
         {
             m_RB.linearVelocity = Vector2.zero; // Zero the players velocity
-            m_gunPosition.SetActive(true); // Show the players gun sprite
+            SetGunStatusRpc(true); // Show the players gun sprite
             m_canAttack = true;
             m_returnPosition = transform.position; // Set the position for the player to return to when exiting shoot mode
             transform.position = m_platformPosition; // Set players position to the platforms position
@@ -256,10 +275,44 @@ public class PlayerControllerSoldier : PlayerController
         projectile.GetComponent<NetworkObject>().Spawn();
     }
 
+    [Rpc(SendTo.Server)]
+    private void SetGunStatusRpc(bool isActive)
+    {
+        m_networkGunEnabled.Value = isActive;
+    }
+
+    private void Handle_NetworkGunEnabled_OnValueChanged(bool previousValue, bool newValue)
+    {
+        m_gunPosition.SetActive(newValue);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetGunPositionRpc(Vector3 position)
+    {
+        m_networkGunPosition.Value = position;
+    }
+
+    private void Handle_NetworkGunPosition_OnValueChanged(Vector3 previousValue, Vector3 newValue)
+    {
+        m_gunPosition.transform.position = newValue;
+
+        Debug.Log($"Network gun position has changed to {newValue} on {GetComponent<NetworkObject>().NetworkObjectId} ");
+
+        if (m_gunPosition.transform.position.x > 0)
+        {
+            m_gunPosition.GetComponent<SpriteRenderer>().flipX = false;
+        }
+
+        else if (m_gunPosition.transform.position.x < 0)
+        {
+            m_gunPosition.GetComponent<SpriteRenderer>().flipX = true;
+        }
+    }
+
     private Vector3 GetMousePos()
     {
         // Get mouse position
-        Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 mousePos = base.m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0; // Ensure z is at the same level as the player
 
         return mousePos;
