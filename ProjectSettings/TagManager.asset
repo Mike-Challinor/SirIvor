@@ -8,6 +8,7 @@ TagManager:
   - BuildModeTilemap
   - StructuresTilemap
   - Resources
+  - Enemy
   layers:
   - Default
   - TransparentFX

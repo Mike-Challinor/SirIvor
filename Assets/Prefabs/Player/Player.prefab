@@ -704,6 +704,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   playerHUD: {fileID: 1481974954307920249}
   slider: {fileID: 2970517004459312015}
+  m_reticle: {fileID: 0}
 --- !u!114 &7452073993080810485
 MonoBehaviour:
   m_ObjectHideFlags: 0

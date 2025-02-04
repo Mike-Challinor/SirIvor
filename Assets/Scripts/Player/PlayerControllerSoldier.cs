@@ -2,6 +2,8 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.Tilemaps;
 using System.Collections;
+using System.IO.Pipes;
+using UnityEngine.UIElements;
 
 public class PlayerControllerSoldier : PlayerController
 {
@@ -26,21 +28,12 @@ public class PlayerControllerSoldier : PlayerController
 
     [SerializeField] private float m_attackTimer = 0.5f;
 
-    private NetworkVariable<Vector3> firePointPosition = new NetworkVariable<Vector3>(
-    default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-
     protected override void Start()
     {
         base.Start();
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap")?.GetComponent<Tilemap>();
         m_tileManager = GameObject.FindWithTag("Tilemanager")?.GetComponent<TileManager>();
 
-        // Ensure fire point is updated when the variable changes
-        firePointPosition.OnValueChanged += (oldValue, newValue) =>
-        {
-            m_firePoint.transform.position = newValue;
-        };
     }
 
     protected override void Update()
@@ -105,22 +98,7 @@ public class PlayerControllerSoldier : PlayerController
         {
             m_gunPosition.transform.position = new Vector3(transform.position.x - 0.5f, transform.position.y, 0);
         }
-
-        // Update the NetworkVariable so other clients see the correct position
-        if (IsOwner)
-        {
-            firePointPosition.Value = newFirePointPosition;
-        }
     }
-
-
-    [Rpc(SendTo.Server)]
-    private void SetFirepointPositionRpc(Vector3 newPosition)
-    {
-        firePointPosition.Value = newPosition;
-        m_firePoint.transform.position = newPosition;
-    }
-
 
     private void CheckForPlatform()
     {
@@ -200,19 +178,27 @@ public class PlayerControllerSoldier : PlayerController
     public void InitiateAttack()
     {
         Debug.Log("Initiate Attack function called...");
-
-        if (IsMouseWithinScreen())
+        
+        if (base.IsMouseWithinScreen())
         {
+            Debug.Log("Mouse is within screen...");
             m_isAttacking = true;
             StartCoroutine(Attack());
+        }
+
+        else
+        {
+            Debug.LogError("Mouse is not within screen");
         }
     }
 
     private IEnumerator Attack()
     {
+        Debug.Log("Attack function called...");
+
         while (m_isAttacking)
         {
-            SpawnProjectileRpc();
+            SpawnProjectile();
 
             // Set whether the player can attack
             m_canAttack = false;
@@ -239,23 +225,21 @@ public class PlayerControllerSoldier : PlayerController
         return m_canAttack;
     }
 
-    [Rpc(SendTo.Server)]
-    private void SpawnProjectileRpc()
+    private void SpawnProjectile()
     {
-        Vector3 spawnPos = firePointPosition.Value; // Get the synced position
+        Debug.Log("Spawn projectile function called");
 
-        if (spawnPos == Vector3.zero)
-        {
-            Debug.LogError("FirePoint position is (0,0,0)! Possible desync.");
-        }
-
-        Debug.Log($"Spawning projectile from: {spawnPos}");
-
-        Vector2 fireDirection = GetFireDirection(spawnPos);
+        Vector2 fireDirection = GetFireDirection(m_firePoint.transform.position);
         float angle = Mathf.Atan2(fireDirection.y, fireDirection.x) * Mathf.Rad2Deg;
 
-        GameObject projectile = Instantiate(m_projectilePrefab, spawnPos, Quaternion.Euler(0, 0, angle - 90f));
+        SpawnProjectileRpc(fireDirection, m_firePoint.transform.position, m_firePoint.transform.rotation);
 
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SpawnProjectileRpc(Vector3 direction, Vector3 position, Quaternion rotation)
+    {
+        GameObject projectile = Instantiate(m_projectilePrefab, position, rotation);
         Projectile projectileComponent = projectile.GetComponent<Projectile>();
 
         if (projectileComponent == null)
@@ -264,10 +248,12 @@ public class PlayerControllerSoldier : PlayerController
             return;
         }
 
-        projectileComponent.SetDirection(fireDirection);
-        NetworkObject networkObject = projectile.GetComponent<NetworkObject>();
-        networkObject.Spawn(true);
-        projectileComponent.SetDirectionRpc(fireDirection);
+        else
+        {
+            projectileComponent.SetDirection(direction);
+        }
+
+        projectile.GetComponent<NetworkObject>().Spawn();
     }
 
     private Vector3 GetMousePos()
