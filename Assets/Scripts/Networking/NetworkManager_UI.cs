@@ -2,31 +2,30 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 public class NetworkManager_UI : MonoBehaviour
 {
-    [SerializeField] private Button m_ServerButton;
-    [SerializeField] private Button m_HostButton;
-    [SerializeField] private Button m_ClientButton;
+    [SerializeField] private Button m_HostGameButton;
+    [SerializeField] private Button m_JoinGameButton;
+    [SerializeField] private GameObject m_MainMenuCanvas;
+    [SerializeField] private GameObject m_LobbyCanvas;
 
     void Start()
     {
-
-        m_ServerButton.onClick.AddListener(() =>
-        {
-            Debug.Log("Server button clicked. Starting server...");
-            NetworkManager.Singleton.StartServer();
-        });
-
-        m_HostButton.onClick.AddListener(() =>
+        m_HostGameButton.onClick.AddListener(() =>
         {
             Debug.Log("Host button clicked. Starting host...");
             NetworkManager.Singleton.StartHost();
+            m_MainMenuCanvas.SetActive(false);
+            m_LobbyCanvas.SetActive(true);
             
         });
 
-        m_ClientButton.onClick.AddListener(() =>
+        m_JoinGameButton.onClick.AddListener(() =>
         {
+            m_MainMenuCanvas.SetActive(false);
+            m_LobbyCanvas.SetActive(true);
             Debug.Log("Client button clicked. Starting client...");
             NetworkManager.Singleton.StartClient();
         });
