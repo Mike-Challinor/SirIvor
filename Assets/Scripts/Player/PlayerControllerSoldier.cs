@@ -36,14 +36,15 @@ public class PlayerControllerSoldier : PlayerController
 
     NetworkVariable<Vector3> m_networkGunPosition = new NetworkVariable<Vector3>();
 
-    protected override void Start()
+    public override void OnNetworkSpawn()
     {
-        base.Start();
+        base.OnNetworkSpawn();
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap")?.GetComponent<Tilemap>();
         m_tileManager = GameObject.FindWithTag("Tilemanager")?.GetComponent<TileManager>();
 
         m_networkGunEnabled.OnValueChanged += Handle_NetworkGunEnabled_OnValueChanged;
         m_networkGunPosition.OnValueChanged += Handle_NetworkGunPosition_OnValueChanged;
+
     }
 
     protected override void Update()
@@ -124,6 +125,7 @@ public class PlayerControllerSoldier : PlayerController
         int layerMask = ~LayerMask.GetMask("Player"); // Ignore Player layer
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, m_lastDirection, m_interactDistance, layerMask);
+
         if (hit.collider != null && hit.collider.CompareTag("StructuresTilemap"))
         {
             Vector3Int tilePosition = m_structuresTilemap.WorldToCell(hit.point);
@@ -312,7 +314,7 @@ public class PlayerControllerSoldier : PlayerController
     private Vector3 GetMousePos()
     {
         // Get mouse position
-        Vector3 mousePos = base.m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 mousePos = m_playerCamera.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0; // Ensure z is at the same level as the player
 
         return mousePos;

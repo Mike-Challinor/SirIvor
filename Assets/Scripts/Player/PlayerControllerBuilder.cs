@@ -40,9 +40,9 @@ public class PlayerControllerBuilder : PlayerController
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    protected override void Start()
+    public override void OnNetworkSpawn()
     {
-        base.Start();
+        base.OnNetworkSpawn();
 
         // Ensure m_objectTileArray is initialized
         m_objectTileArray = new TileBase[2][];  // 2 for Fence and Platform

@@ -12,9 +12,12 @@ public class Player_Input_Handler : NetworkBehaviour
     private Transform m_playerTransform;
     protected PlayerInputAction m_PlayerActions;
     private PlayerController m_playerController;
+    private LoadingScreenUI m_loadingScreenUI;
 
     [SerializeField] protected bool m_isFacingRight = true;
     [SerializeField] private bool m_canMove = true;
+
+    [SerializeField] private GameObject m_loadingScreen;
 
     protected virtual void Awake()
     {
@@ -22,6 +25,8 @@ public class Player_Input_Handler : NetworkBehaviour
         m_playerSprite = GetComponent<SpriteRenderer>();
         m_playerTransform = GetComponent<Transform>();
         m_playerController = GetComponent<PlayerController>();
+        m_loadingScreen = GameObject.FindGameObjectWithTag("LoadingScreen");
+        m_loadingScreenUI = m_loadingScreen.GetComponent<LoadingScreenUI>();
     }
 
     protected virtual void OnEnable()
@@ -48,7 +53,16 @@ public class Player_Input_Handler : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        MovePlayer();
+        if (m_loadingScreenUI.GetIsLoading())
+        {
+            // Do not move player as game is still loading
+        }
+
+        else
+        {
+
+            MovePlayer();
+        }
     }
 
     private void MovePlayer()

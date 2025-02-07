@@ -9,6 +9,7 @@ TagManager:
   - StructuresTilemap
   - Resources
   - Enemy
+  - LoadingScreen
   layers:
   - Default
   - TransparentFX
