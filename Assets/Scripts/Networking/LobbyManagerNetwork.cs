@@ -3,10 +3,12 @@ using UnityEngine.UI;
 using Unity.Netcode;
 using TMPro;
 using System.Collections;
-using System.Security.Cryptography;
 
 public class LobbyManagerNetwork : NetworkBehaviour
 {
+    [SerializeField] private NetworkManager m_networkManager;
+    [SerializeField] private NetworkManager_GameManager m_gameManager;
+    [SerializeField] private NetworkManager_GameManager.PlayerClass m_playerClass;
     [SerializeField] private Button m_builderButton;
     [SerializeField] private Button m_shooterButton;
     [SerializeField] private Button m_builderReadyButton;
@@ -23,10 +25,15 @@ public class LobbyManagerNetwork : NetworkBehaviour
 
     [SerializeField] private bool m_builderSelected = false;
     [SerializeField] private bool m_shooterSelected = false;
-    [SerializeField] private ulong m_networkId;
+    [SerializeField] private bool m_isReadied = false;
+    [SerializeField] private ulong m_clientId;
 
     void Start()
     {
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        m_gameManager = m_networkManager.GetComponent<NetworkManager_GameManager>();
+        m_playerClass = NetworkManager_GameManager.PlayerClass.Default;
+
         m_builderSelectedServer.OnValueChanged += Handle_BuilderClassSelected_OnValueChanged;
         m_shooterSelectedServer.OnValueChanged += Handle_ShooterClassSelected_OnValueChanged;
         m_readyCount.OnValueChanged += Handle_ReadyCount_OnValueChanged;
@@ -36,63 +43,86 @@ public class LobbyManagerNetwork : NetworkBehaviour
         {
             Debug.Log("Builder button clicked.");
 
-            SetBuilderSelectedRpc(true, GetComponent<NetworkObject>().OwnerClientId);
+            SetBuilderSelectedRpc(true, m_clientId);
 
             if (m_shooterSelected == true)
             {
                 m_shooterSelected = false;
-                SetShooterSelectedRpc(false, GetComponent<NetworkObject>().OwnerClientId);
+                SetShooterSelectedRpc(false, m_clientId);
                 m_shooterReadyButton.interactable = false;
-                
             }
 
             m_builderReadyButton.interactable = true;
             m_builderSelected = true;
 
-            UpdatePlayerCounterPositionServerRpc(-500, GetComponent<NetworkObject>().OwnerClientId);
-
+            UpdatePlayerCounterPositionServerRpc(-500, m_clientId);
         });
 
         m_shooterButton.onClick.AddListener(() =>
         {
             Debug.Log("Shooter button clicked. Starting client...");
 
-            SetShooterSelectedRpc(true, GetComponent<NetworkObject>().OwnerClientId);
+            SetShooterSelectedRpc(true, m_clientId);
 
             if (m_builderSelected == true)
             {
                 m_builderSelected = false;
-                SetBuilderSelectedRpc(false, GetComponent<NetworkObject>().OwnerClientId);
+                SetBuilderSelectedRpc(false, m_clientId);
                 m_builderReadyButton.interactable = false;
             }
 
             m_shooterReadyButton.interactable = true;
             m_shooterSelected = true;
 
-            UpdatePlayerCounterPositionServerRpc(500, GetComponent<NetworkObject>().OwnerClientId);
-
+            UpdatePlayerCounterPositionServerRpc(500, m_clientId);
         });
 
         m_builderReadyButton.onClick.AddListener(() =>
         {
             Debug.Log("Builder ready button clicked.");
+
+            // Disable all buttons
             m_shooterButton.interactable = false;
             m_shooterReadyButton.interactable = false;
             m_builderReadyButton.interactable = false;
-            UpdateReadiedPlayersRpc(true);
 
+            // Set the player's class
+            m_playerClass = NetworkManager_GameManager.PlayerClass.Builder;
+
+            // Let the server update the player list
+            SetPlayerClassOnServerRpc(m_clientId, m_playerClass);
+
+            // Update the amount of readied players on the server
+            UpdateReadiedPlayersRpc(true);
         });
 
         m_shooterReadyButton.onClick.AddListener(() =>
         {
             Debug.Log("Shooter ready button clicked.");
+
+            // Disable all buttons
             m_builderButton.interactable = false;
-            m_shooterReadyButton.interactable = false;
             m_builderReadyButton.interactable = false;
+            m_shooterReadyButton.interactable = false;
+
+            // Set the player's class
+            m_playerClass = NetworkManager_GameManager.PlayerClass.Shooter;
+
+            // Let the server update the player list
+            SetPlayerClassOnServerRpc(m_clientId, m_playerClass);
+
+            // Update the amount of readied players on the server
             UpdateReadiedPlayersRpc(true);
         });
+    }
 
-        m_networkId = GetComponent<NetworkObject>().NetworkObjectId;
+    private void OnClientConnected(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            m_clientId = clientId;
+            Debug.Log($"Client {clientId} connected and assigned network ID: {m_clientId}");
+        }
     }
 
     private void Update()
@@ -145,54 +175,62 @@ public class LobbyManagerNetwork : NetworkBehaviour
 
     private void Deselect()
     {
-        if (m_builderSelected)
+        if (!m_isReadied)
         {
-            m_builderSelected = false;
-            SetBuilderSelectedRpc(false, m_networkId);
-            m_builderReadyButton.interactable = false;
-
-            if (m_shooterSelectedServer.Value == false)
+            if (m_builderSelected)
             {
-                m_shooterButton.interactable = true;
-            }
-        }
+                m_builderSelected = false;
+                SetBuilderSelectedRpc(false, m_clientId);
+                m_builderReadyButton.interactable = false;
 
-        else if (m_shooterSelected)
-        {
-            m_shooterSelected = false;
-            SetShooterSelectedRpc(false, m_networkId);
-            m_shooterReadyButton.interactable = false;
-
-            if (m_builderSelectedServer.Value == false)
-            {
-                m_builderButton.interactable = true;
+                if (m_shooterSelectedServer.Value == false)
+                {
+                    m_shooterButton.interactable = true;
+                }
             }
 
-            
-        }
+            else if (m_shooterSelected)
+            {
+                m_shooterSelected = false;
+                SetShooterSelectedRpc(false, m_clientId);
+                m_shooterReadyButton.interactable = false;
 
-        else
-        {
-            Debug.Log("Nothing to deselect");
-        }
+                if (m_builderSelectedServer.Value == false)
+                {
+                    m_builderButton.interactable = true;
+                }
+            }
 
-        UpdatePlayerCounterPositionServerRpc(0, m_networkId);
+            else
+            {
+                Debug.Log("Nothing to deselect");
+            }
+
+            UpdatePlayerCounterPositionServerRpc(0, m_clientId);
+        }
     }
 
     [Rpc(SendTo.Server)]
-    private void SetBuilderSelectedRpc(bool isSelected, ulong networkId)
+    private void SetPlayerClassOnServerRpc(ulong clientId, NetworkManager_GameManager.PlayerClass chosenClass)
+    {
+        // Let the server handle adding the player
+        m_gameManager.AddPlayerRpc(clientId, chosenClass);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetBuilderSelectedRpc(bool isSelected, ulong clientId)
     {
         m_builderSelectedServer.Value = isSelected;
 
-        Debug.Log($"Builder selected network variable has been set to: {m_builderSelectedServer.Value} by player {networkId}");
+        Debug.Log($"Builder selected network variable has been set to: {m_builderSelectedServer.Value} by player {clientId}");
     }
 
     [Rpc(SendTo.Server)]
-    private void SetShooterSelectedRpc(bool isSelected, ulong networkId)
+    private void SetShooterSelectedRpc(bool isSelected, ulong clientId)
     {
         m_shooterSelectedServer.Value = isSelected;
 
-        Debug.Log($"Shooter selected network variable has been set to: {m_builderSelectedServer.Value} by player {networkId}");
+        Debug.Log($"Shooter selected network variable has been set to: {m_builderSelectedServer.Value} by player {clientId}");
     }
 
     [Rpc(SendTo.Server)]
@@ -217,42 +255,45 @@ public class LobbyManagerNetwork : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void UpdatePlayerCounterPositionServerRpc(int amountToChange, ulong networkId)
+    private void UpdatePlayerCounterPositionServerRpc(int amountToChange, ulong clientId)
     {
-        Debug.Log($"Updating player counter on player {networkId}");
+        Debug.Log($"Updating player counter on player {m_clientId}");
 
-        if (networkId == 0)
+        if (clientId == 0)
         {
             m_playerOneCounter.rectTransform.anchoredPosition = new Vector2(0 + amountToChange, m_playerOneCounter.rectTransform.anchoredPosition.y);
         }
 
         else
         {
-            m_playerTwoCounter.rectTransform.anchoredPosition = new Vector3(0 + amountToChange, m_playerOneCounter.rectTransform.anchoredPosition.y, 0);
+            m_playerTwoCounter.rectTransform.anchoredPosition = new Vector3(0 + amountToChange, m_playerTwoCounter.rectTransform.anchoredPosition.y, 0);
         }
 
-        UpdatePlayerCounterPositionClientRpc(amountToChange, networkId);
+        UpdatePlayerCounterPositionClientRpc(amountToChange, clientId);
     }
 
     [Rpc(SendTo.NotServer)]
-    private void UpdatePlayerCounterPositionClientRpc(int amountToChange, ulong networkId)
+    private void UpdatePlayerCounterPositionClientRpc(int amountToChange, ulong clientId)
     {
-        Debug.Log($"Updating player counter on player {networkId}");
+        Debug.Log($"Updating player counter on player {clientId}");
 
-        if (networkId == 0)
+        if (clientId == 0)
         {
             m_playerOneCounter.rectTransform.anchoredPosition = new Vector2(0 + amountToChange, m_playerOneCounter.rectTransform.anchoredPosition.y);
         }
 
         else
         {
-            m_playerTwoCounter.rectTransform.anchoredPosition = new Vector3(0 + amountToChange, m_playerOneCounter.rectTransform.anchoredPosition.y, 0);
+            m_playerTwoCounter.rectTransform.anchoredPosition = new Vector3(0 + amountToChange, m_playerTwoCounter.rectTransform.anchoredPosition.y, 0);
         }
     }
 
     private IEnumerator StartTimer()
     {
         yield return StartCoroutine(GameStartTimer());
+
+        // Start Game
+        m_gameManager.StartGameRpc();
     }
 
     private IEnumerator GameStartTimer()
@@ -274,8 +315,4 @@ public class LobbyManagerNetwork : NetworkBehaviour
     {
         m_timerCount.Value--;
     }
-
-    
-
-
 }
