@@ -47,6 +47,11 @@ public class enemy_Controller : NetworkBehaviour
         m_navMeshAgent = GetComponent<NavMeshAgent>();
         m_navMeshAgent.updateRotation = false;
         m_navMeshAgent.updateUpAxis = false;
+
+        // Find the nearest fence tile
+        List<Vector3Int> allTargets = new List<Vector3Int>();
+        allTargets = m_tileManager.GetFencePositions();
+        m_target = FindNearestTarget(allTargets);
     }
 
     // Update is called once per frame
@@ -119,7 +124,37 @@ public class enemy_Controller : NetworkBehaviour
     {
         Debug.Log("ENEMY_CONTROLLER::FINDTARGET:: Finding enemy target...");
 
-        m_target = FindNearestFence();
+        // Find the nearest tile to the main structure
+        List<Vector3Int> allTargets = new List<Vector3Int>();
+        allTargets = m_tileManager.GetBuildingPositions();
+
+        if (allTargets == null)
+        {
+            Debug.Log("All targets is null");
+        }
+
+        else
+        {
+            Debug.Log("All targets is not null");
+        }
+
+        m_target = FindNearestTarget(allTargets);
+
+        // Check if path is valid
+        if (HasValidPath(m_target))
+        {
+            Debug.Log("Path to building is valid");
+            return;
+        }
+
+        else
+        {
+            Debug.Log("Path to building is not valid... finding fence");
+
+            // Find the nearest tile to the fences structure
+            allTargets = m_tileManager.GetFencePositions();
+            m_target = FindNearestTarget(allTargets);
+        }
     }
 
     private GameObject FindNearestPlayer()
@@ -164,20 +199,22 @@ public class enemy_Controller : NetworkBehaviour
        return tempTarget;
     }
 
-    private Vector3 FindNearestFence()
+    private Vector3 FindNearestTarget(List<Vector3Int> allTargets)
     {
         // Reset the temporary target variable
         Vector3Int tempTarget = new Vector3Int();
 
-        // Find and store reference to all fences
-        List<Vector3Int> allTargets = m_tileManager.GetFences();
+        if (allTargets == null)
+        {
+            return new Vector3(0, 0, 0);
+        }
 
-        // Remove any fences that are too far away or dead
-        allTargets.RemoveAll(fence =>
+        // Remove any buildings that are too far away or dead
+        allTargets.RemoveAll(tile =>
         {
             // Use sqrMagnitude to get float distance
-            float targetDistance = (m_tileManager.GetTilemap().CellToWorld(fence) - transform.position).sqrMagnitude; // Get the world posiiton and calculate distance
-            return targetDistance > m_aggroDistance || m_tileManager.GetTileHealth(fence) <= 0; // Remove if fence is dead or too far away
+            float targetDistance = (m_tileManager.GetTilemap().CellToWorld(tile) - transform.position).sqrMagnitude; // Get the world posiiton and calculate distance
+            return targetDistance > m_aggroDistance || m_tileManager.GetTileHealth(tile) <= 0; // Remove if fence is dead or too far away
         });
 
         // Loop through all potential targets
@@ -358,6 +395,16 @@ public class enemy_Controller : NetworkBehaviour
         Debug.Log("ENEMYCONTROLLER::FLIPSPRITERPC:: Flipping enemy sprite");
     }
 
+    bool HasValidPath(Vector3 targetPosition)
+    {
+        NavMeshPath path = new NavMeshPath();
+        if (m_navMeshAgent.CalculatePath(targetPosition, path))
+        {
+            return path.status == NavMeshPathStatus.PathComplete;
+        }
+        return false;
+    }
+
     // Debug function for drawing gizmos of the enemy's attack size
     private void OnDrawGizmos()
     {
@@ -367,7 +414,6 @@ public class enemy_Controller : NetworkBehaviour
             Vector2 attackCenter = m_attackCollider.bounds.center;
             Vector2 attackSize = new Vector2(m_attackCollider.bounds.size.x, m_attackCollider.bounds.size.y);
 
-            ChangeSpriteColour(Color.red);
             Gizmos.DrawWireCube(attackCenter, (Vector3)attackSize); // Cast to Vector3 for visualization
             
         }

@@ -722,6 +722,10 @@ PrefabInstance:
       value: Tilemanager
       objectReference: {fileID: 0}
     - target: {fileID: 5400006588322030640, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
+      propertyPath: m_navMesh
+      value: 
+      objectReference: {fileID: 415174194}
+    - target: {fileID: 5400006588322030640, guid: 9069cb2ba97460149a5e37be068138b5, type: 3}
       propertyPath: m_fences.Array.size
       value: 16
       objectReference: {fileID: 0}
@@ -56379,7 +56383,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3281635773921381989, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_spawnTimer
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3498480758229671751, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_LocalPosition.x

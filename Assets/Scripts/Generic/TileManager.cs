@@ -8,7 +8,8 @@ public class TileManager : MonoBehaviour
     [SerializeField] public Dictionary<Vector3Int, TileData> m_tileDataMap = new Dictionary<Vector3Int, TileData>();
     [SerializeField] private List<TileGroup> m_tileGroups = new List<TileGroup>();
 
-    private List<Vector3Int> m_fencePositions = new List<Vector3Int>();
+    [SerializeField] private List<Vector3Int> m_fencePositions = new List<Vector3Int>();
+    [SerializeField] private List<Vector3Int> m_buildingPositions;
 
     private Tilemap m_tilemap;
 
@@ -23,6 +24,9 @@ public class TileManager : MonoBehaviour
     [SerializeField] private float m_fenceHealth = 100f;
     [SerializeField] private float m_buildingHealth = 500f;
     [SerializeField] private float m_platformHealth = 200f;
+
+    [SerializeField] private GameObject m_navMesh;
+    public NavMeshPlus.Components.NavMeshSurface m_navMeshSurface;
 
     public struct TileData
     {
@@ -53,6 +57,7 @@ public class TileManager : MonoBehaviour
         InitializeTileTypeArrays();
         m_tilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
         InitializeTileMap();
+        m_navMeshSurface = m_navMesh.GetComponent<NavMeshPlus.Components.NavMeshSurface>();
     }
 
     private void InitializeTileTypeArrays()
@@ -87,6 +92,7 @@ public class TileManager : MonoBehaviour
                     else if (tileType == "Building")
                     {
                         AddBuildingGroup(position);
+                        m_buildingPositions.Add(position);
                     }
                     else if (tileType == "Tree")
                     {
@@ -239,20 +245,17 @@ public class TileManager : MonoBehaviour
         }
     }
 
-    [Rpc(SendTo.Server)]
+    [Rpc(SendTo.Everyone)]
     private void RemoveTileServerRpc(Vector3Int position)
     {
+        // Set tile to null
         m_tilemap.SetTile(position, null);
 
-        // Sync with the client
-        RemoveTileClientRpc(position);
+        // Rebake nav mesh
+        m_navMeshSurface.BuildNavMesh();
+
     }
 
-    [Rpc(SendTo.NotServer)]
-    private void RemoveTileClientRpc(Vector3Int position)
-    {
-        m_tilemap.SetTile(position, null);
-    }
 
     public bool IsTileInGroup(Vector3Int tilePosition)
     {
@@ -280,10 +283,14 @@ public class TileManager : MonoBehaviour
         return null; // Return null if no group is found
     }
 
-    public List<Vector3Int> GetFences()
+    public List<Vector3Int> GetFencePositions()
     {
         return m_fencePositions;
-    }    
+    }
+    public List<Vector3Int> GetBuildingPositions()
+    {
+        return m_buildingPositions;
+    }
 
     public Tilemap GetTilemap()
     {
