@@ -518,6 +518,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2510625245348369103, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6081999887275212636}
+    - targetCorrespondingSourceObject: {fileID: 2510625245348369103, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -7002585527192538809}
   m_SourcePrefab: {fileID: 100100000, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
 --- !u!20 &5286785260823522566 stripped
 Camera:
@@ -580,7 +583,30 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
   m_canMove: 1
+  m_loadingScreen: {fileID: 0}
   builderControllerScript: {fileID: 0}
+--- !u!195 &-7002585527192538809
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7582966427513006916}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1
+  m_BaseOffset: 0.5
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!4 &8212227382711108566 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4187260075922258525, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}

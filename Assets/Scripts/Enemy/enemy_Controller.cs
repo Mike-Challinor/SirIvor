@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ public class enemy_Controller : NetworkBehaviour
     [SerializeField] private GameObject m_target;
     [SerializeField] private BoxCollider2D m_attackCollider;
     [SerializeField] private bool m_isAttacking = false;
+
+    private NavMeshAgent m_navMeshAgent;
 
     private bool m_isFacingRight = false;
     private SpriteRenderer m_enemySprite;
@@ -34,6 +37,11 @@ public class enemy_Controller : NetworkBehaviour
         m_healthComponent = GetComponent<HealthComponent>();
         m_enemySprite = GetComponent<SpriteRenderer>();
         m_playerHUD = GetComponent<PlayerHUD>();
+
+        // Initialise the nav mesh agent and updates 
+        m_navMeshAgent = GetComponent<NavMeshAgent>();
+        m_navMeshAgent.updateRotation = false;
+        m_navMeshAgent.updateUpAxis = false;
     }
 
     // Update is called once per frame
@@ -64,7 +72,7 @@ public class enemy_Controller : NetworkBehaviour
             if (distance > m_attackRange)
             {
                 // Move the enemy towards the target
-                m_RB.linearVelocity = moveDir * m_moveSpeed;
+                m_navMeshAgent.SetDestination(m_target.transform.position);
 
                 if ((moveDir.x > 0 && !m_isFacingRight) || (moveDir.x < 0 && m_isFacingRight))
                 {

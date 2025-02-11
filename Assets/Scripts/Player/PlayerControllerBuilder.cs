@@ -4,6 +4,7 @@ using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.AI;
 using Unity.VisualScripting;
 
 public class PlayerControllerBuilder : PlayerController
@@ -28,6 +29,8 @@ public class PlayerControllerBuilder : PlayerController
     [SerializeField] private Tilemap[] m_TilemapArray;
     [SerializeField] private GameObject m_buildSprite;
     [SerializeField] private GameObject m_playerHUDLocal;
+
+    private UnityEngine.AI.NavMeshAgent m_navMeshAgent;
 
     private float lastUpdateTime = 0f;
     private const float updateInterval = 0.05f; // 50ms interval for updates
@@ -71,6 +74,11 @@ public class PlayerControllerBuilder : PlayerController
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
         m_TilemapArray[1] = m_structuresTilemap;
         m_tileManager = GameObject.FindWithTag("Tilemanager").GetComponent<TileManager>();
+
+        // Initialise the nav mesh agent and updates 
+        m_navMeshAgent = GetComponent<NavMeshAgent>();
+        m_navMeshAgent.updateRotation = false;
+        m_navMeshAgent.updateUpAxis = false;
     }
 
 
