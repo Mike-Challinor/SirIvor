@@ -12,11 +12,14 @@ public class enemy_Controller : NetworkBehaviour
     [SerializeField] private float m_attackRange = 2f;
     [SerializeField] private float m_attackDuration = 1f;
     [SerializeField] private float m_attackCooldown = 2f;
-    [SerializeField] private GameObject m_target;
+    [SerializeField] private float m_aggroDistance = 15f;
+    [SerializeField] private Vector3 m_target;
+    [SerializeField] private bool m_hasTarget = false;
     [SerializeField] private BoxCollider2D m_attackCollider;
     [SerializeField] private bool m_isAttacking = false;
 
     private NavMeshAgent m_navMeshAgent;
+    private TileManager m_tileManager;
 
     private bool m_isFacingRight = false;
     private SpriteRenderer m_enemySprite;
@@ -37,6 +40,7 @@ public class enemy_Controller : NetworkBehaviour
         m_healthComponent = GetComponent<HealthComponent>();
         m_enemySprite = GetComponent<SpriteRenderer>();
         m_playerHUD = GetComponent<PlayerHUD>();
+        m_tileManager = GameObject.FindGameObjectWithTag("Tilemanager").GetComponent<TileManager>();
 
         // Initialise the nav mesh agent and updates 
         m_navMeshAgent = GetComponent<NavMeshAgent>();
@@ -53,7 +57,7 @@ public class enemy_Controller : NetworkBehaviour
         Vector2 moveDir = Vector2.zero;
 
         // Look for a target if the enemy does not have one
-        if (m_target == null)
+        if (m_hasTarget == false)
         {
             Debug.Log("ENEMY_CONTROLLER::UPDATE:: Enemy has no target..  Calling FindTarget() function...");
             FindTarget();
@@ -61,18 +65,18 @@ public class enemy_Controller : NetworkBehaviour
         else
         {
             // Set the enemy's move direction towards the target
-            moveDir = m_target.transform.position - transform.position;
+            moveDir = m_target - transform.position;
 
             // Normalize the move direction
             moveDir.Normalize();
 
             // Calculate distance from target
-            float distance = Vector2.Distance(m_target.transform.position, transform.position);
+            float distance = Vector2.Distance(m_target, transform.position);
 
             if (distance > m_attackRange)
             {
                 // Move the enemy towards the target
-                m_navMeshAgent.SetDestination(m_target.transform.position);
+                m_navMeshAgent.SetDestination(m_target);
 
                 if ((moveDir.x > 0 && !m_isFacingRight) || (moveDir.x < 0 && m_isFacingRight))
                 {
@@ -104,6 +108,11 @@ public class enemy_Controller : NetworkBehaviour
     {
         Debug.Log("ENEMY_CONTROLLER::FINDTARGET:: Finding enemy target...");
 
+        m_target = FindNearestFence();
+    }
+
+    private GameObject FindNearestPlayer()
+    {
         // Reset the temporary target variable
         GameObject tempTarget = null;
 
@@ -141,16 +150,57 @@ public class enemy_Controller : NetworkBehaviour
         }
 
         // Set the enemy's target
-        m_target = tempTarget;
+       return tempTarget;
+    }
 
-        if (m_target != null)
+    private Vector3 FindNearestFence()
+    {
+        // Reset the temporary target variable
+        Vector3Int tempTarget = new Vector3Int();
+
+        // Find and store reference to all fences
+        List<Vector3Int> allTargets = m_tileManager.GetFences();
+
+        // Remove any fences that are too far away or dead
+        allTargets.RemoveAll(fence =>
         {
-            Debug.Log("ENEMY_CONTROLLER::FINDTARGET:: Target found: " + m_target.name);
-        }
-        else
+            // Use sqrMagnitude to get float distance
+            float targetDistance = (m_tileManager.GetTilemap().CellToWorld(fence) - transform.position).sqrMagnitude; // Get the world posiiton and calculate distance
+            return targetDistance > m_aggroDistance || m_tileManager.GetTileHealth(fence) <= 0; // Remove if fence is dead or too far away
+        });
+
+        // Loop through all potential targets
+        foreach (Vector3Int target in allTargets)
         {
-            Debug.Log("ENEMY_CONTROLLER::FINDTARGET:: No valid targets found.");
+            // If this is the first object in the list, set it as the temp target
+            if (tempTarget == null)
+            {
+                tempTarget = target;
+            }
+            else
+            {
+                // Use sqrMagnitude to get float distances
+                float tempTargetDistance = (m_tileManager.GetTilemap().CellToWorld(tempTarget) - transform.position).sqrMagnitude; // Get the world posiiton of temp target and calculate distance
+                float foundTargetDistance = (m_tileManager.GetTilemap().CellToWorld(target) - transform.position).sqrMagnitude; // Get the world posiiton of found target and calculate distance
+
+                // Check if the found target's distance is less than the current temp target
+                if (foundTargetDistance < tempTargetDistance)
+                {
+                    // Update the temp target to the closer found target
+                    tempTarget = target;
+                }
+            }
         }
+
+        // Convert the temp target from cell position to its world position and store in chosenTarget (Vector3)
+        Vector3 chosenTarget = m_tileManager.GetTilemap().CellToWorld(tempTarget);
+
+        m_hasTarget = true;
+
+        Debug.Log($"Target found at cell position: {tempTarget}");
+
+        // Return the chosen target
+        return chosenTarget;
     }
 
     // Begin attack which calls the attack timer
@@ -190,9 +240,10 @@ public class enemy_Controller : NetworkBehaviour
     private void AttackTargetRpc(Vector2 attackCenter, Vector2 attackSize)
     {
         Collider2D[] hitColliders = Physics2D.OverlapBoxAll(attackCenter, attackSize, 0);
+
         foreach (var collider in hitColliders)
         {
-            if (collider.CompareTag("Player")) // Ensure the collider belongs to the player
+            if (collider.CompareTag("Player")) // If the collider belongs to the player
             {
                 HealthComponent playerHealth = collider.GetComponentInParent<HealthComponent>();
 
@@ -214,6 +265,20 @@ public class enemy_Controller : NetworkBehaviour
                 {
                     Debug.Log("ENEMYCONTROLLER::ATTACKTARGETRPC:: Health component is null");
                 }
+            }
+
+            else if (collider.CompareTag("StructuresTilemap")) // If the collider belongs to a structure
+            {
+                // Remove health from the tile
+                m_tileManager.RemoveTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target), m_attackDamage);
+
+                // Check to see if the tile has been destroyed
+                if (m_tileManager.GetTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target)) == 0)
+                {
+                    // Reset target so a new target is found
+                    m_hasTarget = false;
+                }
+                
             }
         }
 
@@ -293,7 +358,10 @@ public class enemy_Controller : NetworkBehaviour
 
             ChangeSpriteColour(Color.red);
             Gizmos.DrawWireCube(attackCenter, (Vector3)attackSize); // Cast to Vector3 for visualization
+            
         }
+
+        Gizmos.DrawWireSphere(transform.position, m_aggroDistance);
     }
 
     void ChangeSpriteColour(Vector4 colour)

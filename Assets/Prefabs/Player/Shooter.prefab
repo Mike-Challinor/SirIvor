@@ -374,6 +374,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_isFacingRight: 1
   m_canMove: 1
+  m_loadingScreen: {fileID: 0}
   m_soldierControllerScript: {fileID: 0}
 --- !u!114 &8222373326687152781
 MonoBehaviour:

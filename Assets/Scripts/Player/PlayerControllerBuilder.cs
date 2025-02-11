@@ -414,7 +414,7 @@ public class PlayerControllerBuilder : PlayerController
 
             // Add either the increment or the remaining health, whichever is smaller
             float healthToAdd = Mathf.Min(healthIncrement, remainingHealth);
-            m_tileManager.SetTileHealth(m_buildTileLocation, healthToAdd);
+            m_tileManager.AddTileHealth(m_buildTileLocation, healthToAdd);
 
             // Get tile's health values
             float? currentHealth = m_tileManager.GetTileHealth(m_buildTileLocation);

@@ -7,6 +7,8 @@ public class TileManager : MonoBehaviour
     [SerializeField] public Dictionary<Vector3Int, TileData> m_tileDataMap = new Dictionary<Vector3Int, TileData>();
     [SerializeField] private List<TileGroup> m_tileGroups = new List<TileGroup>();
 
+    private List<Vector3Int> m_fencePositions = new List<Vector3Int>();
+
     private Tilemap m_tilemap;
 
     [SerializeField] private TileBase[] m_fences;
@@ -75,6 +77,7 @@ public class TileManager : MonoBehaviour
                     if (tileType == "Fence")
                     {
                         AddSingleSprite(position, m_fenceHealth, m_fenceHealth, tileType);
+                        m_fencePositions.Add(position);
                     }
                     else if (tileType == "Platform")
                     {
@@ -184,7 +187,7 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
-    public void SetTileHealth(Vector3Int tilePosition, float healthToAdd)
+    public void AddTileHealth(Vector3Int tilePosition, float healthToAdd)
     {
         if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
         {
@@ -202,6 +205,32 @@ public class TileManager : MonoBehaviour
 
             // Log the updated health
             Debug.Log($"{healthToAdd} health has been added to the tile data at position: {tilePosition}. Current health = {tileData.CurrentHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
+        }
+    }
+
+    public void RemoveTileHealth(Vector3Int tilePosition, float healthToRemove)
+    {
+        if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
+        {
+            // Modify the current health
+            tileData.CurrentHealth -= healthToRemove;
+
+            // Prevent current health from falling below 0
+            if (tileData.CurrentHealth <= 0)
+            {
+                tileData.CurrentHealth = 0;
+                m_tilemap.SetTile(tilePosition, null);
+            }
+
+            // Update the tile data in the dictionary
+            m_tileDataMap[tilePosition] = tileData;
+
+            // Log the updated health
+            Debug.Log($"{healthToRemove} health has been removed from the tile data at position: {tilePosition}. Current health = {tileData.CurrentHealth}");
         }
         else
         {
@@ -235,6 +264,15 @@ public class TileManager : MonoBehaviour
         return null; // Return null if no group is found
     }
 
+    public List<Vector3Int> GetFences()
+    {
+        return m_fencePositions;
+    }    
+
+    public Tilemap GetTilemap()
+    {
+        return m_tilemap;
+    }
 
     public void UpdateTileGroupHealth(TileGroup group, float amount)
     {

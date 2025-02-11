@@ -56375,7 +56375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3281635773921381989, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_isActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3281635773921381989, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_spawnTimer
@@ -56387,7 +56387,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3498480758229671751, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 9.41
+      value: 10.51
       objectReference: {fileID: 0}
     - target: {fileID: 3498480758229671751, guid: cd45abbe221d67e439fbf6b692657ac0, type: 3}
       propertyPath: m_LocalPosition.z
