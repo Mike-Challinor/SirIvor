@@ -3,12 +3,13 @@ using UnityEngine.AI;
 using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class enemy_Controller : NetworkBehaviour
 {
     [SerializeField] private GameObject[] m_allTargets;
     [SerializeField] private float m_moveSpeed = 1f;
-    [SerializeField] private float m_attackDamage = 5f;
+    [SerializeField] private float m_attackDamage = 20f;
     [SerializeField] private float m_attackRange = 2f;
     [SerializeField] private float m_attackDuration = 1f;
     [SerializeField] private float m_attackCooldown = 2f;
@@ -64,6 +65,16 @@ public class enemy_Controller : NetworkBehaviour
         }
         else
         {
+            // Find a new target if the health of the target is 0 or less
+            if (m_tileManager != null)
+            {
+                if (m_tileManager.GetTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target)) <= 0)
+                {
+                    m_hasTarget = false;
+                    return;
+                }
+            }
+
             // Set the enemy's move direction towards the target
             moveDir = m_target - transform.position;
 

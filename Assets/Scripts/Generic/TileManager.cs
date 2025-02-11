@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -223,7 +224,7 @@ public class TileManager : MonoBehaviour
             if (tileData.CurrentHealth <= 0)
             {
                 tileData.CurrentHealth = 0;
-                m_tilemap.SetTile(tilePosition, null);
+                RemoveTileServerRpc(tilePosition);
             }
 
             // Update the tile data in the dictionary
@@ -236,6 +237,21 @@ public class TileManager : MonoBehaviour
         {
             Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void RemoveTileServerRpc(Vector3Int position)
+    {
+        m_tilemap.SetTile(position, null);
+
+        // Sync with the client
+        RemoveTileClientRpc(position);
+    }
+
+    [Rpc(SendTo.NotServer)]
+    private void RemoveTileClientRpc(Vector3Int position)
+    {
+        m_tilemap.SetTile(position, null);
     }
 
     public bool IsTileInGroup(Vector3Int tilePosition)
