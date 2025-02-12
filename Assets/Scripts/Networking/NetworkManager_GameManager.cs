@@ -71,24 +71,16 @@ public class NetworkManager_GameManager : MonoBehaviour
         networkManager.SceneManager.LoadScene(nextSceneName, LoadSceneMode.Single);
 
         StartCoroutine(WaitToSpawnPlayers());
+
+
         
     }
-
-    [Rpc(SendTo.Everyone)]
-    private void NotifyClientsToUnloadSceneRpc()
-    {
-        string previousSceneName = "MainMenu";
-        Scene previousScene = SceneManager.GetSceneByName(previousSceneName);
-
-        NetworkManager networkManager = GetComponent<NetworkManager>();
-        networkManager.SceneManager.UnloadScene(previousScene);
-    }    
-
 
     // Coroutine to wait for scene load to spawn players
     private IEnumerator WaitToSpawnPlayers()
     {
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(5f);
+        
         SpawnPlayersRpc();
     }
 

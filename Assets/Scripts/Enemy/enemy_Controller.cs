@@ -163,48 +163,6 @@ public class enemy_Controller : NetworkBehaviour
         }
     }
 
-    private GameObject FindNearestPlayer()
-    {
-        // Reset the temporary target variable
-        GameObject tempTarget = null;
-
-        // Find and store reference to all players and convert to a List for easier manipulation
-        List<GameObject> allTargets = new List<GameObject>(GameObject.FindGameObjectsWithTag("Player"));
-
-        // Remove any dead players from the list
-        allTargets.RemoveAll(player =>
-        {
-            HealthComponent health = player.GetComponent<HealthComponent>();
-            return health == null || health.GetHealth() <= 0; // Remove if player is dead or health component is missing
-        });
-
-        // Loop through all potential targets
-        foreach (GameObject target in allTargets)
-        {
-            // If this is the first object in the list, set it as the temp target
-            if (tempTarget == null)
-            {
-                tempTarget = target;
-            }
-            else
-            {
-                // Use sqrMagnitude to get float distances
-                float tempTargetDistance = (tempTarget.transform.position - transform.position).sqrMagnitude;
-                float foundTargetDistance = (target.transform.position - transform.position).sqrMagnitude;
-
-                // Check if the found target's distance is less than the current temp target
-                if (foundTargetDistance < tempTargetDistance)
-                {
-                    // Update the temp target to the closer found target
-                    tempTarget = target;
-                }
-            }
-        }
-
-        // Set the enemy's target
-       return tempTarget;
-    }
-
     private Vector3 FindNearestTarget(List<Vector3Int> allTargets)
     {
         // Reset the temporary target variable
@@ -221,9 +179,9 @@ public class enemy_Controller : NetworkBehaviour
             // Use sqrMagnitude to get float distance
             float targetDistance = (m_tileManager.GetTilemap().CellToWorld(tile) - transform.position).sqrMagnitude; // Get the world posiiton and calculate distance
             targetDistance = Mathf.Sqrt(targetDistance);
-            return targetDistance > m_aggroDistance; // Remove if tile is dead or too far away
+            return targetDistance > m_aggroDistance || m_tileManager.GetTileHealth(tile) <= 0; // Remove if tile is dead or too far away
 
-            // m_tileManager.GetTileHealth(tile) <= 0
+            
 
         });
 
@@ -301,32 +259,8 @@ public class enemy_Controller : NetworkBehaviour
         Collider2D[] hitColliders = Physics2D.OverlapBoxAll(attackCenter, attackSize, 0);
 
         foreach (var collider in hitColliders)
-        {
-            if (collider.CompareTag("Player")) // If the collider belongs to the player
-            {
-                HealthComponent playerHealth = collider.GetComponentInParent<HealthComponent>();
-
-                if (playerHealth != null)
-                {
-                    Debug.Log("ENEMYCONTROLLER::ATTACKTARGETRPC:: Applying damage on the server");
-
-                    // Apply damage on the server
-                    playerHealth.RemoveHealth(m_attackDamage);
-
-                    Debug.Log("ENEMYCONTROLLER::ATTACKTARGETRPC:: Calling UpdateHealthRpc...");
-                    Debug.Log($"ENEMYCONTROLLER::ATTACKTARGETRPC:: Received NetworkObjectId: {collider.GetComponentInParent<NetworkObject>().NetworkObjectId}");
-
-                    // Notify clients of the health change
-                    UpdateHealthRpc(collider.GetComponentInParent<NetworkObject>().NetworkObjectId, playerHealth.GetHealth());
-                }
-
-                else
-                {
-                    Debug.Log("ENEMYCONTROLLER::ATTACKTARGETRPC:: Health component is null");
-                }
-            }
-
-            else if (collider.CompareTag("StructuresTilemap")) // If the collider belongs to a structure
+        {            
+            if (collider.CompareTag("StructuresTilemap")) // If the collider belongs to a structure
             {
                 // Check if tile is in a group (is a building) or not (is a fence)
                 if (m_tileManager.IsTileInGroup(m_tileManager.GetTilemap().WorldToCell(m_target)))
@@ -386,31 +320,6 @@ public class enemy_Controller : NetworkBehaviour
     private void UpdateTileGroupHealth(Vector3Int target)
     {
         m_tileManager.UpdateTileGroupHealth(m_tileManager.GetTileGroup(target), m_attackDamage);
-    }
-
-    // ClientRpc to update health on all clients
-    [Rpc(SendTo.NotServer)]
-    private void UpdateHealthRpc(ulong targetNetworkObjectId, float newhealth)
-    {
-        Debug.Log("ENEMYCONTROLLER::UPDATEHEALTHRPC:: Called UpdateHealthRPC() on clients... right?");
-
-        // Find the target object using its NetworkObjectId
-        var targetObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetNetworkObjectId];
-
-        // Check that the target has been found
-        if (targetObject != null)
-        {
-            HealthComponent healthComponent = targetObject.GetComponent<HealthComponent>();
-            if (healthComponent != null)
-            {
-                healthComponent.SetHealth(newhealth);
-            }
-        }
-
-        else
-        {
-            Debug.Log("ENEMYCONTROLLER::UPDATEHEALTHRPC:: Target object could not be found from Network Object ID");
-        }
     }
 
     // ClientRpc to update the enemy's position on all clients
