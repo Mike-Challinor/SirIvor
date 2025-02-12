@@ -30,10 +30,14 @@ public class LobbyManagerNetwork : NetworkBehaviour
 
     void Start()
     {
+        // Subscribe to OnClientConnected singleton
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+
+        // Get references to game manager and player class within the game manager
         m_gameManager = m_networkManager.GetComponent<NetworkManager_GameManager>();
         m_playerClass = NetworkManager_GameManager.PlayerClass.Default;
 
+        // Subscribe to network variables
         m_builderSelectedServer.OnValueChanged += Handle_BuilderClassSelected_OnValueChanged;
         m_shooterSelectedServer.OnValueChanged += Handle_ShooterClassSelected_OnValueChanged;
         m_readyCount.OnValueChanged += Handle_ReadyCount_OnValueChanged;
@@ -43,18 +47,25 @@ public class LobbyManagerNetwork : NetworkBehaviour
         {
             Debug.Log("Builder button clicked.");
 
+            // Set the builder button as selected on the server
             SetBuilderSelectedRpc(true, m_clientId);
 
+            // If the shooter was selected previously then deselect it
             if (m_shooterSelected == true)
             {
+                // Update locally
                 m_shooterSelected = false;
-                SetShooterSelectedRpc(false, m_clientId);
                 m_shooterReadyButton.interactable = false;
+
+                // Update the server
+                SetShooterSelectedRpc(false, m_clientId);
             }
 
+            // Set builder buttons as selected locally
             m_builderReadyButton.interactable = true;
             m_builderSelected = true;
 
+            // Update the player counter position on server (but it also calls on clients from the serverRpc)
             UpdatePlayerCounterPositionServerRpc(-500, m_clientId);
         });
 
@@ -62,18 +73,25 @@ public class LobbyManagerNetwork : NetworkBehaviour
         {
             Debug.Log("Shooter button clicked. Starting client...");
 
+            // Set the shooter button as selected on the server
             SetShooterSelectedRpc(true, m_clientId);
 
+            // If the builder was selected previously then deselect it
             if (m_builderSelected == true)
             {
+                // Update locally
                 m_builderSelected = false;
-                SetBuilderSelectedRpc(false, m_clientId);
                 m_builderReadyButton.interactable = false;
+
+                // Update the server
+                SetBuilderSelectedRpc(false, m_clientId);
             }
 
+            // Set shooter buttons as selected locally
             m_shooterReadyButton.interactable = true;
             m_shooterSelected = true;
 
+            // Update the player counter position on server (but it also calls on clients from the serverRpc)
             UpdatePlayerCounterPositionServerRpc(500, m_clientId);
         });
 
@@ -118,10 +136,29 @@ public class LobbyManagerNetwork : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
+        // Set the client ID on connection
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             m_clientId = clientId;
             Debug.Log($"Client {clientId} connected and assigned network ID: {m_clientId}");
+        }
+
+        // If the client has connected (not the host) synchronise the hosts changes prior to the client connecting
+        if (clientId == 1)
+        {
+            // If the builder has been selected by the host prior to connection then disable that button and set the hosts counter position
+            if (m_builderSelectedServer.Value)
+            {
+                Handle_BuilderClassSelected_OnValueChanged(false, true);
+                m_playerOneCounter.rectTransform.anchoredPosition = new Vector2(0 - 500, m_playerOneCounter.rectTransform.anchoredPosition.y);
+            }
+
+            // If the shooter has been selected by the host prior to connection then disable that button and set the hosts counter position
+            else if (m_shooterSelectedServer.Value)
+            {
+                Handle_ShooterClassSelected_OnValueChanged(false, true);
+                m_playerOneCounter.rectTransform.anchoredPosition = new Vector2(0 + 500, m_playerOneCounter.rectTransform.anchoredPosition.y);
+            }
         }
     }
 

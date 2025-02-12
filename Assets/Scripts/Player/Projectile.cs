@@ -5,7 +5,7 @@ using System.Collections;
 public class Projectile : NetworkBehaviour
 {
     [SerializeField] private float m_projectileSpeed = 12f;
-    [SerializeField] private float m_damage = 40f;
+    [SerializeField] private float m_damage = 100f;
     [SerializeField] private float m_lifespan = 4f;
     private Rigidbody2D m_RB;
 

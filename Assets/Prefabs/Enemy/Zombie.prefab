@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6058784234398201162}
-  - component: {fileID: 4622348619588468007}
+  - component: {fileID: 2537471602462925062}
   m_Layer: 0
   m_Name: SpriteCollider
   m_TagString: Untagged
@@ -32,8 +32,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4377423569879596937}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!58 &4622348619588468007
-CircleCollider2D:
+--- !u!70 &2537471602462925062
+CapsuleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -66,8 +66,9 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.01950112, y: -0.13650766}
-  m_Radius: 0.355992
+  m_Offset: {x: -0.0045002103, y: 0}
+  m_Size: {x: 0.61700714, y: 1}
+  m_Direction: 0
 --- !u!1 &4761925174495908155
 GameObject:
   m_ObjectHideFlags: 0
@@ -84,6 +85,7 @@ GameObject:
   - component: {fileID: 3199232483029964653}
   - component: {fileID: 6833919610434934162}
   - component: {fileID: 8451307041987483342}
+  - component: {fileID: 7413847289083628063}
   m_Layer: 0
   m_Name: Zombie
   m_TagString: Enemy
@@ -152,7 +154,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: -2311659948842064771, guid: 1c05813e1ab0ef34db0b77be4ba3baff, type: 3}
+  m_Sprite: {fileID: 6284166523789267160, guid: 647d9b1ff092b404992c3db04b46ccd3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -283,11 +285,13 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   m_allTargets: []
   m_moveSpeed: 0.5
-  m_attackDamage: 5
-  m_attackRange: 1.1
+  m_attackDamage: 25
+  m_attackRange: 2
   m_attackDuration: 1
   m_attackCooldown: 2
-  m_target: {fileID: 0}
+  m_aggroDistance: 15
+  m_target: {x: 0, y: 0, z: 0}
+  m_hasTarget: 0
   m_attackCollider: {fileID: 3058096550676735425}
   m_isAttacking: 0
 --- !u!114 &8451307041987483342
@@ -304,6 +308,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_health: 0
   m_maxHealth: 100
+--- !u!195 &7413847289083628063
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4761925174495908155}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.354
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 0.964
+  m_BaseOffset: 0.482
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &7585809836466866501
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,7 +396,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.29551718, y: -0.075004354}
+  m_Offset: {x: 0.5, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -380,5 +406,5 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.5769754, y: 0.49597046}
+  m_Size: {x: 0.6, y: 0.6}
   m_EdgeRadius: 0

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -7,7 +8,10 @@ public class TileManager : MonoBehaviour
     [SerializeField] public Dictionary<Vector3Int, TileData> m_tileDataMap = new Dictionary<Vector3Int, TileData>();
     [SerializeField] private List<TileGroup> m_tileGroups = new List<TileGroup>();
 
-    private Tilemap m_tilemap;
+    [SerializeField] private List<Vector3Int> m_fencePositions = new List<Vector3Int>();
+    [SerializeField] private List<Vector3Int> m_buildingPositions;
+
+    [SerializeField] private Tilemap m_tilemap;
 
     [SerializeField] private TileBase[] m_fences;
     [SerializeField] private TileBase[] m_platforms;
@@ -20,6 +24,9 @@ public class TileManager : MonoBehaviour
     [SerializeField] private float m_fenceHealth = 100f;
     [SerializeField] private float m_buildingHealth = 500f;
     [SerializeField] private float m_platformHealth = 200f;
+
+    [SerializeField] private GameObject m_navMesh;
+    public NavMeshPlus.Components.NavMeshSurface m_navMeshSurface;
 
     public struct TileData
     {
@@ -50,6 +57,7 @@ public class TileManager : MonoBehaviour
         InitializeTileTypeArrays();
         m_tilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
         InitializeTileMap();
+        m_navMeshSurface = m_navMesh.GetComponent<NavMeshPlus.Components.NavMeshSurface>();
     }
 
     private void InitializeTileTypeArrays()
@@ -75,14 +83,27 @@ public class TileManager : MonoBehaviour
                     if (tileType == "Fence")
                     {
                         AddSingleSprite(position, m_fenceHealth, m_fenceHealth, tileType);
+                        m_fencePositions.Add(position);
                     }
                     else if (tileType == "Platform")
                     {
-                        AddPlatformGroup(position);
+                        // Create a platform group if one has not been created
+                        if (!IsTileInGroup(position))
+                        {
+                            AddPlatformGroup(position);
+                        }
+                        
                     }
                     else if (tileType == "Building")
                     {
-                        AddBuildingGroup(position);
+                        // Create a building group if one has not been created
+                        if (!IsTileInGroup(position))
+                        {
+                            AddBuildingGroup(position);
+                        }
+
+                        m_buildingPositions.Add(position);
+
                     }
                     else if (tileType == "Tree")
                     {
@@ -113,7 +134,7 @@ public class TileManager : MonoBehaviour
         TileGroup buildingGroup = CreateTileGroup(m_buildingHealth);
         for (int xOffset = 0; xOffset <= 9; xOffset++)
         {
-            for (int yOffset = 0; yOffset <= 2; yOffset++)
+            for (int yOffset = 0; yOffset <= 3; yOffset++)
             {
                 Vector3Int buildingPosition = new Vector3Int(position.x + xOffset, position.y + yOffset, position.z);
                 AddTileToGroup(buildingGroup, buildingPosition, "Building");
@@ -184,7 +205,7 @@ public class TileManager : MonoBehaviour
         return null;
     }
 
-    public void SetTileHealth(Vector3Int tilePosition, float healthToAdd)
+    public void AddTileHealth(Vector3Int tilePosition, float healthToAdd)
     {
         if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
         {
@@ -208,6 +229,46 @@ public class TileManager : MonoBehaviour
             Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
         }
     }
+
+    public void RemoveTileHealth(Vector3Int tilePosition, float healthToRemove)
+    {
+        if (m_tileDataMap.TryGetValue(tilePosition, out TileData tileData))
+        {
+            // Modify the current health
+            tileData.CurrentHealth -= healthToRemove;
+
+            // Prevent current health from falling below 0
+            if (tileData.CurrentHealth <= 0)
+            {
+                tileData.CurrentHealth = 0;
+                RemoveTileServerRpc(tilePosition);
+            }
+
+            // Update the tile data in the dictionary
+            m_tileDataMap[tilePosition] = tileData;
+
+            // Log the updated health
+            Debug.Log($"{healthToRemove} health has been removed from the tile data at position: {tilePosition}. Current health = {tileData.CurrentHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("Unable to get the tile data value from the tilePosition passed through");
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void RemoveTileServerRpc(Vector3Int position)
+    {
+        Debug.Log("Remove tile");
+
+        // Set tile to null
+        m_tilemap.SetTile(position, null);
+
+        // Rebake nav mesh
+        m_navMeshSurface.BuildNavMesh();
+
+    }
+
 
     public bool IsTileInGroup(Vector3Int tilePosition)
     {
@@ -235,6 +296,19 @@ public class TileManager : MonoBehaviour
         return null; // Return null if no group is found
     }
 
+    public List<Vector3Int> GetFencePositions()
+    {
+        return m_fencePositions;
+    }
+    public List<Vector3Int> GetBuildingPositions()
+    {
+        return m_buildingPositions;
+    }
+
+    public Tilemap GetTilemap()
+    {
+        return m_tilemap;
+    }
 
     public void UpdateTileGroupHealth(TileGroup group, float amount)
     {
