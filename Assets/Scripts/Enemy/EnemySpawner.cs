@@ -4,9 +4,7 @@ using Unity.Netcode;
 
 public class EnemySpawner : NetworkBehaviour
 {
-    [SerializeField] private float m_spawnTimer = 5.5f;
     [SerializeField] private GameObject m_enemyPrefab;
-    [SerializeField] private bool m_isActive = false;
 
     private SpriteRenderer sr;
 
@@ -18,24 +16,11 @@ public class EnemySpawner : NetworkBehaviour
 
         // Disable the editor icon for the spawner
         sr.enabled = false;
-
-        // Start the spawn timer
-        StartCoroutine(EnemySpawnTimer());
     }
 
-    IEnumerator EnemySpawnTimer()
+    public void SpawnEnemy()
     {
-        while (m_isActive)
-        {
-            // Wait time
-            yield return new WaitForSeconds(m_spawnTimer);
-
-            // Only invoke the server RPC on the server
-            if (IsServer)
-            {
-                SpawnEnemyRpc();
-            }
-        }
+        SpawnEnemyRpc();
     }
 
     [Rpc(SendTo.Server)]

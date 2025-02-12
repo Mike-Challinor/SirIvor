@@ -13,7 +13,9 @@ public class NetworkManager_GameManager : MonoBehaviour
     [SerializeField] private GameObject shooterPrefab;
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private Slider loadingSlider;
+    [SerializeField] private NetworkManager_WaveManager m_waveManager;
 
+    // Class with players data
     [System.Serializable]
     public class PlayerData
     {
@@ -21,6 +23,7 @@ public class NetworkManager_GameManager : MonoBehaviour
         public PlayerClass playerClass;
     }
 
+    // Enum for player classes
     public enum PlayerClass
     {
         Default,
@@ -28,19 +31,35 @@ public class NetworkManager_GameManager : MonoBehaviour
         Shooter
     }
 
+    // Enum for gamestate
+    public enum GameState
+    {
+        Default,
+        GameStarted,
+        GameEnded
+    }
+
+    // Set a reference for the current games state
+    private GameState m_currentGameState = GameState.Default;
+
     [Rpc(SendTo.Server)]
     public void AddPlayerRpc(ulong clientId, PlayerClass chosenClass)
     {
-        if (!m_playerList.ContainsKey(clientId))
+        // Add the player if not already been added
+        if (!m_playerList.ContainsKey(clientId)) // Check that clientID has not already been added to list
         {
-            m_playerList.Add(clientId, chosenClass);
+            // Add to player dictionary
+            m_playerList.Add(clientId, chosenClass); 
 
-            PlayerData newPlayer = new PlayerData
+            // Create and set new player data
+            PlayerData newPlayer = new PlayerData 
             {
                 clientId = clientId,
                 playerClass = chosenClass
             };
-            playerList.Add(newPlayer);
+
+            // Add to player list with new playerData
+            playerList.Add(newPlayer); 
 
             Debug.Log($"Player {clientId} selected class: {chosenClass}");
         }
@@ -50,64 +69,88 @@ public class NetworkManager_GameManager : MonoBehaviour
         }
     }
 
+    // Method for returning list of player data
     public List<PlayerData> GetPlayers()
     {
         return playerList;
     }
 
+    // Server rpc for starting the game
     [Rpc(SendTo.Server)]
     public void StartGameRpc()
     {
-        // Notify clients to load the next scene
+        // Notify everyone to load the next scene
         NotifyClientsToLoadSceneRpc();
     }
 
     [Rpc(SendTo.Everyone)]
     private void NotifyClientsToLoadSceneRpc()
     {
+        // Set the scene string to name
         string nextSceneName = "SampleScene";
 
+        // Get reference to the network manager script
         NetworkManager networkManager = GetComponent<NetworkManager>();
+
+        // Load the next scene
         networkManager.SceneManager.LoadScene(nextSceneName, LoadSceneMode.Single);
 
+        // Start coroutine to eventually spawn players
         StartCoroutine(WaitToSpawnPlayers());
-
-
         
     }
 
     // Coroutine to wait for scene load to spawn players
     private IEnumerator WaitToSpawnPlayers()
     {
+        // Time to wait until game has started
         yield return new WaitForSeconds(5f);
+
+        // Set the current game state to game started
+        SetCurrentGameState(GameState.GameStarted);
         
+        // Spawn all players
         SpawnPlayersRpc();
+
+        // Start the wave manager
+        m_waveManager = GetComponent<NetworkManager_WaveManager>();
+        m_waveManager.StartWaveManager();
     }
 
     [Rpc(SendTo.Server)]
     private void SpawnPlayersRpc()
     {
+        // Loop through data for each player in the playerList
         foreach (var playerData in playerList)
         {
+            // Reset the player prefab
             GameObject playerPrefab = null;
 
             // Choose the correct prefab based on player class
-            if (playerData.playerClass == PlayerClass.Builder)
+            if (playerData.playerClass == PlayerClass.Builder) // If player chose builder class
             {
-                playerPrefab = builderPrefab;
-            }
-            else if (playerData.playerClass == PlayerClass.Shooter)
-            {
-                playerPrefab = shooterPrefab;
-            }
-            else
-            {
-                Debug.LogWarning($"Player {playerData.clientId} has an unsupported class {playerData.playerClass}. Defaulting to Builder.");
+                // Set to relevant prefab for the builder class
                 playerPrefab = builderPrefab;
             }
 
-            if (playerPrefab != null)
+            else if (playerData.playerClass == PlayerClass.Shooter) // If player chose shooter class
             {
+                // Set to relevant prefab for shooter class
+                playerPrefab = shooterPrefab;
+            }
+
+            else // Debug checking for unsupported class in case game started without choice
+            {
+                Debug.LogWarning($"Player {playerData.clientId} has an unsupported class {playerData.playerClass}. Defaulting to Builder.");
+
+                // Default to builder class
+                playerPrefab = builderPrefab;
+            }
+
+            // Spawn the player
+            if (playerPrefab != null) // Check that player prefab has been set
+            {
+                // Instantiate the object locally and spawn on the network
                 GameObject playerObject = Instantiate(playerPrefab);
                 NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
                 networkObject.SpawnAsPlayerObject(playerData.clientId);
@@ -116,5 +159,16 @@ public class NetworkManager_GameManager : MonoBehaviour
 
             }
         }
+    }
+
+    public void SetCurrentGameState(GameState newState)
+    {
+        m_currentGameState = newState;
+        Debug.Log($"Game State changed to: {m_currentGameState}");
+    }
+
+    public GameState GetCurrentGameState()
+    {
+        return m_currentGameState;
     }
 }
