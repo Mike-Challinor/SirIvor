@@ -225,5 +225,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   m_projectileSpeed: 22
-  m_damage: 40
+  m_damage: 100
   m_lifespan: 4

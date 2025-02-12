@@ -50,7 +50,7 @@ public class enemy_Controller : NetworkBehaviour
 
         // Find the nearest fence tile
         List<Vector3Int> allTargets = new List<Vector3Int>();
-        allTargets = m_tileManager.GetFencePositions();
+        allTargets.AddRange(m_tileManager.GetFencePositions());
         m_target = FindNearestTarget(allTargets);
     }
 
@@ -85,6 +85,9 @@ public class enemy_Controller : NetworkBehaviour
 
             // Normalize the move direction
             moveDir.Normalize();
+
+            // Move the attack collider based on targets direction
+            MoveAttackColliderRpc(moveDir); // Call the RPC to update the attack collider's offset
 
             // Calculate distance from target
             float distance = Vector2.Distance(m_target, transform.position);
@@ -126,7 +129,8 @@ public class enemy_Controller : NetworkBehaviour
 
         // Find the nearest tile to the main structure
         List<Vector3Int> allTargets = new List<Vector3Int>();
-        allTargets = m_tileManager.GetBuildingPositions();
+
+        allTargets.AddRange(m_tileManager.GetBuildingPositions());
 
         if (allTargets == null)
         {
@@ -151,8 +155,10 @@ public class enemy_Controller : NetworkBehaviour
         {
             Debug.Log("Path to building is not valid... finding fence");
 
+            allTargets.Clear();
+
             // Find the nearest tile to the fences structure
-            allTargets = m_tileManager.GetFencePositions();
+            allTargets.AddRange(m_tileManager.GetFencePositions());
             m_target = FindNearestTarget(allTargets);
         }
     }
@@ -214,7 +220,11 @@ public class enemy_Controller : NetworkBehaviour
         {
             // Use sqrMagnitude to get float distance
             float targetDistance = (m_tileManager.GetTilemap().CellToWorld(tile) - transform.position).sqrMagnitude; // Get the world posiiton and calculate distance
-            return targetDistance > m_aggroDistance || m_tileManager.GetTileHealth(tile) <= 0; // Remove if fence is dead or too far away
+            targetDistance = Mathf.Sqrt(targetDistance);
+            return targetDistance > m_aggroDistance; // Remove if tile is dead or too far away
+
+            // m_tileManager.GetTileHealth(tile) <= 0
+
         });
 
         // Loop through all potential targets
@@ -246,6 +256,7 @@ public class enemy_Controller : NetworkBehaviour
         m_hasTarget = true;
 
         Debug.Log($"Target found at cell position: {tempTarget}");
+        Debug.Log($"Converted target to world position: {chosenTarget}");
 
         // Return the chosen target
         return chosenTarget;
@@ -317,21 +328,64 @@ public class enemy_Controller : NetworkBehaviour
 
             else if (collider.CompareTag("StructuresTilemap")) // If the collider belongs to a structure
             {
-                // Remove health from the tile
-                m_tileManager.RemoveTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target), m_attackDamage);
-
-                // Check to see if the tile has been destroyed
-                if (m_tileManager.GetTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target)) == 0)
+                // Check if tile is in a group (is a building) or not (is a fence)
+                if (m_tileManager.IsTileInGroup(m_tileManager.GetTilemap().WorldToCell(m_target)))
                 {
-                    // Reset target so a new target is found
-                    m_hasTarget = false;
+                    // Update tile group health on server
+                    m_tileManager.UpdateTileGroupHealth(m_tileManager.GetTileGroup(m_tileManager.GetTilemap().WorldToCell(m_target)), -m_attackDamage);
+
+                    // Update tile group health on clients
+                    UpdateTileGroupHealthClientRpc(m_tileManager.GetTilemap().WorldToCell(m_target));
+
                 }
-                
+
+                else
+                {
+                    // Remove health from the tile on the server
+                    m_tileManager.RemoveTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target), m_attackDamage);
+
+                    // Check to see if the tile has been destroyed
+                    if (m_tileManager.GetTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target)) == 0)
+                    {
+                        // Reset target so a new target is found
+                        m_hasTarget = false;
+                    }
+
+                    // Update tile health on clients
+                    UpdateTileHealthClientRpc(m_target);
+                }
             }
         }
 
         // Call attack cooldown after applying damage
         StartCoroutine(AttackCooldown());
+    }
+
+    // ClientRpc to update health of tile on all clients
+    [Rpc(SendTo.NotServer)]
+    private void UpdateTileHealthClientRpc(Vector3 target)
+    {
+        // Remove health from the tile
+        m_tileManager.RemoveTileHealth(m_tileManager.GetTilemap().WorldToCell(target), m_attackDamage);
+
+        // Check to see if the tile has been destroyed
+        if (m_tileManager.GetTileHealth(m_tileManager.GetTilemap().WorldToCell(m_target)) == 0)
+        {
+            // Reset target so a new target is found
+            m_hasTarget = false;
+        }
+    }
+
+    // ClientRpc to update health on all clients
+    [Rpc(SendTo.NotServer)]
+    private void UpdateTileGroupHealthClientRpc(Vector3Int target)
+    {
+        UpdateTileGroupHealth(target);
+    }
+
+    private void UpdateTileGroupHealth(Vector3Int target)
+    {
+        m_tileManager.UpdateTileGroupHealth(m_tileManager.GetTileGroup(target), m_attackDamage);
     }
 
     // ClientRpc to update health on all clients
@@ -375,24 +429,20 @@ public class enemy_Controller : NetworkBehaviour
         m_isAttacking = false;
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
+    void MoveAttackColliderRpc(Vector2 moveDir)
+    {
+        // Calculate the new collider offset based on the direction
+        Vector2 newOffset = moveDir * (m_attackRange / 2);
+        m_attackCollider.offset = newOffset;
+    }
+
     // Function for flipping the sprite
     [Rpc(SendTo.ClientsAndHost)]
     void FlipSpriteRpc()
     {
         m_isFacingRight = !m_isFacingRight;
         m_enemySprite.flipX = !m_enemySprite.flipX;
-
-        // Move collider position to correct direction
-        if (m_isFacingRight)
-        {
-            m_attackCollider.offset = new Vector2(Mathf.Abs(m_attackCollider.offset.x), m_attackCollider.offset.y);
-        }
-        else
-        {
-            m_attackCollider.offset = new Vector2(-Mathf.Abs(m_attackCollider.offset.x), m_attackCollider.offset.y);
-        }
-
-        Debug.Log("ENEMYCONTROLLER::FLIPSPRITERPC:: Flipping enemy sprite");
     }
 
     bool HasValidPath(Vector3 targetPosition)
@@ -428,9 +478,5 @@ public class enemy_Controller : NetworkBehaviour
     }
 
 
-    // Function for despawning the enemy
-    private void DespawnOnDeath()
-    {
-        GetComponent<NetworkObject>().Despawn(true);
-    }
+    
 }

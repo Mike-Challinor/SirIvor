@@ -11,7 +11,7 @@ public class TileManager : MonoBehaviour
     [SerializeField] private List<Vector3Int> m_fencePositions = new List<Vector3Int>();
     [SerializeField] private List<Vector3Int> m_buildingPositions;
 
-    private Tilemap m_tilemap;
+    [SerializeField] private Tilemap m_tilemap;
 
     [SerializeField] private TileBase[] m_fences;
     [SerializeField] private TileBase[] m_platforms;
@@ -87,12 +87,23 @@ public class TileManager : MonoBehaviour
                     }
                     else if (tileType == "Platform")
                     {
-                        AddPlatformGroup(position);
+                        // Create a platform group if one has not been created
+                        if (!IsTileInGroup(position))
+                        {
+                            AddPlatformGroup(position);
+                        }
+                        
                     }
                     else if (tileType == "Building")
                     {
-                        AddBuildingGroup(position);
+                        // Create a building group if one has not been created
+                        if (!IsTileInGroup(position))
+                        {
+                            AddBuildingGroup(position);
+                        }
+
                         m_buildingPositions.Add(position);
+
                     }
                     else if (tileType == "Tree")
                     {
@@ -123,7 +134,7 @@ public class TileManager : MonoBehaviour
         TileGroup buildingGroup = CreateTileGroup(m_buildingHealth);
         for (int xOffset = 0; xOffset <= 9; xOffset++)
         {
-            for (int yOffset = 0; yOffset <= 2; yOffset++)
+            for (int yOffset = 0; yOffset <= 3; yOffset++)
             {
                 Vector3Int buildingPosition = new Vector3Int(position.x + xOffset, position.y + yOffset, position.z);
                 AddTileToGroup(buildingGroup, buildingPosition, "Building");
@@ -248,6 +259,8 @@ public class TileManager : MonoBehaviour
     [Rpc(SendTo.Everyone)]
     private void RemoveTileServerRpc(Vector3Int position)
     {
+        Debug.Log("Remove tile");
+
         // Set tile to null
         m_tilemap.SetTile(position, null);
 
