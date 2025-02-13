@@ -15,12 +15,14 @@ public class PlayerHUD : NetworkBehaviour
 
     private bool isHUDActive = false;
 
+    // Function for initialising the hud
     public void initHUD(float max_health)
     {
         Debug.Log("PLAYERHUD::INITHUD:: initHUD function called");
         slider.GetComponent<HealthbarUI>().InitSlider(max_health);
     }
 
+    // Function for updating the health on the slider
     public void updateHealth(float current_health)
     {
         slider.GetComponent<HealthbarUI>().UpdateHealth(current_health);
@@ -39,47 +41,56 @@ public class PlayerHUD : NetworkBehaviour
 
     }
 
+    // Function for setting the huds status
     private void SetHUDActive()
     {
         // Show or hide the HUD
         playerHUD.gameObject.SetActive(isHUDActive);
     }
 
+    // Function for setting the reticle status
     public void SetReticleStatus(bool reticleActive)
     {
         m_reticle.gameObject.SetActive(reticleActive);
     }
 
+    // Function for getting the reticle status
     public bool GetReticleStatus()
     {
         return m_reticle.gameObject.activeSelf;
     }
 
+    // Function for setting the reticle position
     public void SetReticlePosition(Vector3 mousePos)
     {
         m_reticle.transform.position = mousePos;
     }
 
+    // Function for setting the wave timer text
     public void SetWaveTimer(string newText)
     {
         m_waveTimerText.text = newText;
     }
 
+    // Function for setting the wave count text
     public void SetWaveCount(string newText)
     {
         m_waveCountText.text = "Wave " + newText;
     }
 
+    // Function for fading in the wave count text
     public void FadeInWaveCount()
     {
-        //StartCoroutine(FadeTextTimer(m_waveCountText, true));
+        StartCoroutine(FadeTextTimer(m_waveCountText, true));
     }
 
+    // Function for fading the wave timer text
     public void FadeWaveTimer(bool fadeIn)
     {
-        //StartCoroutine(FadeTextTimer(m_waveTimerText, fadeIn));
+        StartCoroutine(FadeTextTimer(m_waveTimerText, fadeIn));
     }
 
+    // Timer for fading text
     private IEnumerator FadeTextTimer(TMP_Text text, bool fadeIn)
     {
         // Delay before starting fade in

@@ -92,7 +92,7 @@ public class PlayerControllerSoldier : PlayerController
     private void SetFirepointPosition()
     {
         Vector3 direction = (GetMousePos() - transform.position).normalized;
-        Vector3 newFirePointPosition = transform.position + (direction * 0.8f);
+        Vector3 newFirePointPosition = transform.position + (direction * 0.9f);
 
         // Update local firePoint
         m_firePoint.transform.position = newFirePointPosition;

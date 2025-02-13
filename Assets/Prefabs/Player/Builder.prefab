@@ -291,7 +291,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 4
   m_TargetDisplay: 0
 --- !u!114 &6353535078023918588
 MonoBehaviour:
@@ -420,6 +420,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 4688266795139732916, guid: ab49048d68bafb940a48e4ac7042b525, type: 3}
+    - target: {fileID: 112216870369578546, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
+      propertyPath: m_SortingOrder
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 112216870369578546, guid: 066e97d72b10ba84a955001a34ca76e9, type: 3}
       propertyPath: m_SortingLayerID
       value: 0
