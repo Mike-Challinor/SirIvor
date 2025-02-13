@@ -2859,7 +2859,6 @@ GameObject:
   - component: {fileID: 1219654337}
   - component: {fileID: 1219654340}
   - component: {fileID: 1219654341}
-  - component: {fileID: 1219654342}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -2985,20 +2984,8 @@ MonoBehaviour:
   playerList: []
   builderPrefab: {fileID: 7582966427513006916, guid: a37fa10620f3d90459149ff70d7daccd, type: 3}
   shooterPrefab: {fileID: 6083042356932467130, guid: ce18165194071d34382350c4247ccfa2, type: 3}
-  loadingScreen: {fileID: 0}
-  loadingSlider: {fileID: 0}
---- !u!114 &1219654342
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1219654336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 80eb4074646e5bf4eaa77f2ca7733539, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_waveManagerObject: {fileID: 0}
+  m_waveManager: {fileID: 0}
 --- !u!1 &1529684292
 GameObject:
   m_ObjectHideFlags: 0

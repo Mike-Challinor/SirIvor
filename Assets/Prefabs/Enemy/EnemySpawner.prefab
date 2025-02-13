@@ -127,6 +127,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  m_spawnTimer: 5.5
   m_enemyPrefab: {fileID: 4761925174495908155, guid: b382019f5fe3a7445aad8d20bd075f29, type: 3}
-  m_isActive: 0

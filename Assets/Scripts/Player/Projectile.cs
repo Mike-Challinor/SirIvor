@@ -26,50 +26,55 @@ public class Projectile : NetworkBehaviour
     // Detect collision with walls
     void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log("Collision!");
 
+        // Despawning logic on collision
         if (collision.gameObject.CompareTag("Resources"))
         {
-            Debug.Log("Projectile collided with a resource box!");
             DespawnProjectile();
         }
 
         else if (collision.gameObject.CompareTag("Enemy"))
         {
-            Debug.Log("Projectile collided with Enemy!");
             DespawnProjectile();
             HealthComponent healthComponent = collision.gameObject.GetComponentInParent<HealthComponent>();
             healthComponent.RemoveHealth(m_damage);
         }
+
+        else if (collision.gameObject.CompareTag("Player"))
+        {
+            DespawnProjectile();
+        }
     }
 
+    // Client Rpc to set direction of the projectile
     [Rpc(SendTo.NotServer)]
     public void SetDirectionRpc(Vector2 fireDirection)
     {
         SetDirection(fireDirection);
     }
 
+    // Method to set direction of the projectile
     public void SetDirection(Vector2 fireDirection)
     {
         float angle = Mathf.Atan2(fireDirection.y, fireDirection.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, angle - 90f);
     }
 
+    // Method for moving the projectile
     private void MoveProjectile()
     {
         m_RB.linearVelocity = transform.up * m_projectileSpeed;
     }
 
+    // Method for despawning the projectile at the end of its lifespan
     void DespawnProjectileAfterLifespan()
     {
-        Debug.Log("Start the despawn lifespan timer");
         StartCoroutine(LifespanTimer());
     }
 
+    // Method for despawning the projectile
     void DespawnProjectile()
     {
-        Debug.Log("Despawn the projectile");
-
         GetComponent<NetworkObject>().Despawn();
 
         if (GetComponent<NetworkObject>() == null)
@@ -78,9 +83,9 @@ public class Projectile : NetworkBehaviour
         }
     }
 
+    // Timer method for the lifespan of projectile
     IEnumerator LifespanTimer()
     {
-        Debug.Log("Despawn lifespan timer started...");
         yield return new WaitForSeconds(m_lifespan);
         DespawnProjectile();
     }

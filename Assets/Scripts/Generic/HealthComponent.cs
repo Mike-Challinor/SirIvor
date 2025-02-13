@@ -12,6 +12,7 @@ public class HealthComponent : MonoBehaviour
     private PlayerHUD m_playerHUD;
 
     private NetworkObject m_networkObject;
+    private NetworkManager_WaveManager m_waveManager;
 
     // Start is called before the first frame update
     void Start()
@@ -19,6 +20,7 @@ public class HealthComponent : MonoBehaviour
         m_health = m_maxHealth;
         m_playerHUD = GetComponent<PlayerHUD>();
         m_networkObject = GetComponent<NetworkObject>();
+        m_waveManager = GameObject.FindWithTag("WaveManager").GetComponent<NetworkManager_WaveManager>();
     }
 
     public void AddHealth(float amount)
@@ -122,6 +124,9 @@ public class HealthComponent : MonoBehaviour
         {
             // Despawn on server
             m_networkObject.Despawn(true);
+
+            // Remove enemy from the wave managers enemy count
+            m_waveManager.RemoveEnemyCount();
         }
 
         else

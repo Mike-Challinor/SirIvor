@@ -213,9 +213,6 @@ public class enemy_Controller : NetworkBehaviour
 
         m_hasTarget = true;
 
-        Debug.Log($"Target found at cell position: {tempTarget}");
-        Debug.Log($"Converted target to world position: {chosenTarget}");
-
         // Return the chosen target
         return chosenTarget;
     }

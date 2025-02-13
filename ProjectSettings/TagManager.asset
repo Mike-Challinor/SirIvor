@@ -11,6 +11,8 @@ TagManager:
   - Enemy
   - LoadingScreen
   - EnemySpawner
+  - WaveManager
+  - PlayerSpawn
   layers:
   - Default
   - TransparentFX

@@ -122,4 +122,35 @@ public class PlayerController : NetworkBehaviour
         return m_moveSpeed;
     }
 
+    // Method for setting the wave timer on the playerHUD
+    public void SetWaveTimer(int count)
+    {
+        if (IsOwner)
+        {
+            // Convert the wave timer to a string and update on the playerHUD
+            m_playerHUD.SetWaveTimer(count.ToString());
+        }
+        
+    }
+
+    // Method for setting the wave count on the PlayerHUD
+    public void SetWaveCount(int count)
+    {
+        if (IsOwner)
+        {
+            // Convert the wave count to a string and update on the playerHUD
+            m_playerHUD.SetWaveCount(count.ToString());
+        }
+    }
+
+    public void FadeInWaveCount()
+    {
+        m_playerHUD.FadeInWaveCount();
+    }
+
+    public void FadeWaveTimer(bool fadeIn)
+    {
+        m_playerHUD.FadeWaveTimer(fadeIn);
+    }
+
 }

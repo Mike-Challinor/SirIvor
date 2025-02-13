@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI; 
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class NetworkManager_GameManager : MonoBehaviour
 {
@@ -11,8 +12,7 @@ public class NetworkManager_GameManager : MonoBehaviour
     [SerializeField] private List<PlayerData> playerList = new List<PlayerData>();
     [SerializeField] private GameObject builderPrefab;
     [SerializeField] private GameObject shooterPrefab;
-    [SerializeField] private GameObject loadingScreen;
-    [SerializeField] private Slider loadingSlider;
+    [SerializeField] private GameObject m_waveManagerObject;
     [SerializeField] private NetworkManager_WaveManager m_waveManager;
 
     // Class with players data
@@ -113,8 +113,11 @@ public class NetworkManager_GameManager : MonoBehaviour
         SpawnPlayersRpc();
 
         // Start the wave manager
-        m_waveManager = GetComponent<NetworkManager_WaveManager>();
+        m_waveManagerObject = GameObject.FindWithTag("WaveManager");
+        m_waveManager = m_waveManagerObject.GetComponent<NetworkManager_WaveManager>();
+        m_waveManager.SetGameManager(this);
         m_waveManager.StartWaveManager();
+
     }
 
     [Rpc(SendTo.Server)]
@@ -126,17 +129,25 @@ public class NetworkManager_GameManager : MonoBehaviour
             // Reset the player prefab
             GameObject playerPrefab = null;
 
+            // Set reference to player spawn objects
+            GameObject[] playerSpawns = GameObject.FindGameObjectsWithTag("PlayerSpawn");
+
+            // Create a reference for the players transform
+            Transform playerTransform = null;
+
             // Choose the correct prefab based on player class
             if (playerData.playerClass == PlayerClass.Builder) // If player chose builder class
             {
                 // Set to relevant prefab for the builder class
                 playerPrefab = builderPrefab;
+                playerTransform = playerSpawns[1].transform;
             }
 
             else if (playerData.playerClass == PlayerClass.Shooter) // If player chose shooter class
             {
                 // Set to relevant prefab for shooter class
                 playerPrefab = shooterPrefab;
+                playerTransform = playerSpawns[0].transform;
             }
 
             else // Debug checking for unsupported class in case game started without choice
@@ -152,6 +163,7 @@ public class NetworkManager_GameManager : MonoBehaviour
             {
                 // Instantiate the object locally and spawn on the network
                 GameObject playerObject = Instantiate(playerPrefab);
+                playerObject.transform.SetParent(playerTransform);
                 NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
                 networkObject.SpawnAsPlayerObject(playerData.clientId);
 

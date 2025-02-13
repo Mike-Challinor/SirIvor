@@ -1,9 +1,16 @@
 fileFormatVersion: 2
 guid: e526491800da962439c1ed62f1512230
+AssetOrigin:
+  serializedVersion: 1
+  productId: 285671
+  packageName: 2D TopDown GrassLand - The Jungle
+  packageVersion: 1.0.0
+  assetPath: Assets/2D TopDown The Jungle/Artwork/Sliced/Tile/Water01.png
+  uploadId: 676268
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
-  serializedVersion: 12
+  serializedVersion: 13
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -20,11 +27,12 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
-  ignoreMasterTextureLimit: 0
+  ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -63,9 +71,10 @@ TextureImporter:
   textureFormatSet: 0
   ignorePngGamma: 0
   applyGammaDecoding: 0
+  swizzle: 50462976
   cookieLightType: 0
   platformSettings:
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -75,9 +84,10 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: Standalone
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -87,9 +97,10 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: Server
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -99,9 +110,10 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: WebGL
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -111,6 +123,20 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
@@ -125,10 +151,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: -4}
+        - {x: 16, y: -3}
+        - {x: 5, y: -14}
+        - {x: 4, y: -32}
+        - {x: 32, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: 9f851c694fec2ab41adef49787ecb4f1
@@ -146,10 +178,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: -7}
+        - {x: 0, y: -3}
+        - {x: -32, y: -4}
+        - {x: -32, y: -32}
+        - {x: 32, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: 50edfb66a364b2f4b94be1e6cb08b8a3
@@ -167,10 +205,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: -4}
+        - {x: 5, y: -2}
+        - {x: -31, y: -8}
+        - {x: -32, y: -32}
+        - {x: 32, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: caba4562bd231ef4eaff16f8b5e7f7c4
@@ -188,10 +232,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: -3, y: -18}
+        - {x: -13, y: -5}
+        - {x: -32, y: -3}
+        - {x: -32, y: -32}
+        - {x: -3, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: 0f487a9e6d04ba04390f55720431a15b
@@ -209,10 +259,17 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 1, y: 3}
+        - {x: 5, y: 16}
+        - {x: 5, y: 32}
+        - {x: 32, y: 32}
+        - {x: 32, y: -32}
+        - {x: 6, y: -31}
       tessellationDetail: 0
       bones: []
       spriteID: b121e425b865cfe40a241c3b8dd3203a
@@ -230,10 +287,15 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: 32}
+        - {x: -32, y: 32}
+        - {x: -32, y: -32}
+        - {x: 32, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: 8d15e2d7a5f4cdf46aa6297a3c0cd86c
@@ -251,8 +313,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -272,10 +335,15 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: -5, y: 31}
+        - {x: -32, y: 32}
+        - {x: -32, y: -32}
+        - {x: -4, y: -31}
       tessellationDetail: 0
       bones: []
       spriteID: da48a13e8a85c954ab834d2c7c11053c
@@ -293,10 +361,17 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 3, y: -6}
+        - {x: 3, y: 14}
+        - {x: 6, y: 32}
+        - {x: 32, y: 32}
+        - {x: 32, y: -32}
+        - {x: 6, y: -32}
       tessellationDetail: 0
       bones: []
       spriteID: a9171a98e973a5a4a97770f7ae025725
@@ -314,8 +389,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -335,8 +411,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
@@ -356,10 +433,15 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: -4, y: 32}
+        - {x: -32, y: 32}
+        - {x: -32, y: -32}
+        - {x: -3, y: -30}
       tessellationDetail: 0
       bones: []
       spriteID: 436673baf9cf1164f93c89e16295c056
@@ -377,10 +459,17 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: 32}
+        - {x: 4, y: 32}
+        - {x: 2, y: 22}
+        - {x: 6, y: 13}
+        - {x: 18, y: 4}
+        - {x: 32, y: 4}
       tessellationDetail: 0
       bones: []
       spriteID: 308d23cd49c64c74e9651975e481760d
@@ -398,10 +487,17 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: 32}
+        - {x: -32, y: 32}
+        - {x: -32, y: 3}
+        - {x: -13, y: 4}
+        - {x: 5, y: 5}
+        - {x: 32, y: 7}
       tessellationDetail: 0
       bones: []
       spriteID: ac34fe44229d44644b76eed5e046f8ed
@@ -419,10 +515,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: 32, y: 32}
+        - {x: -32, y: 32}
+        - {x: -32, y: 8}
+        - {x: -1, y: 3}
+        - {x: 32, y: 4}
       tessellationDetail: 0
       bones: []
       spriteID: b3cf8e2879bf77e4693c35cc993bdc72
@@ -440,10 +542,16 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
       outline: []
-      physicsShape: []
+      physicsShape:
+      - - {x: -3, y: 31}
+        - {x: -32, y: 32}
+        - {x: -31, y: 4}
+        - {x: -19, y: 5}
+        - {x: -5, y: 11}
       tessellationDetail: 0
       bones: []
       spriteID: 8cd78669b9309ea4ca3965ab02fac717
@@ -453,6 +561,7 @@ TextureImporter:
       edges: []
       weights: []
     outline: []
+    customData: 
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
@@ -462,6 +571,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
     nameFileIdTable:
       Water01_0: 393292532
       Water01_1: 820322024
@@ -479,16 +590,8 @@ TextureImporter:
       Water01_7: 1582617388
       Water01_8: 721627748
       Water01_9: 1374592749
-  spritePackingTag: 
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 285671
-  packageName: 2D TopDown GrassLand - The Jungle
-  packageVersion: 1.0.0
-  assetPath: Assets/2D TopDown The Jungle/Artwork/Sliced/Tile/Water01.png
-  uploadId: 676268

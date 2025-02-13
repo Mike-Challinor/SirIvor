@@ -126,7 +126,6 @@ public class TileManager : MonoBehaviour
         Vector3Int abovePosition = new Vector3Int(position.x, position.y + 1, position.z);
         AddTileToGroup(platformGroup, abovePosition, "Platform");
 
-        Debug.Log($"Platform group created at {position} and {abovePosition}");
     }
 
     private void AddBuildingGroup(Vector3Int position)
@@ -140,8 +139,6 @@ public class TileManager : MonoBehaviour
                 AddTileToGroup(buildingGroup, buildingPosition, "Building");
             }
         }
-
-        Debug.Log($"Building group created with tiles from {position} to {(position.x + 9, position.y + 2)}");
     }
 
     public void AddTileToGroup(TileGroup group, Vector3Int tilePosition, string type)
@@ -152,7 +149,6 @@ public class TileManager : MonoBehaviour
             var tileData = new TileData(group.SharedHealth.CurrentHealth, group.SharedHealth.MaxHealth, type);
             m_tileDataMap[tilePosition] = tileData;
 
-            Debug.Log($"Added tile {tilePosition} to group with shared health {group.SharedHealth.CurrentHealth}");
         }
         else
         {
@@ -164,7 +160,6 @@ public class TileManager : MonoBehaviour
     {
         var group = new TileGroup(initialHealth);
         m_tileGroups.Add(group);
-        Debug.Log($"Created new tile group with shared health: {initialHealth}");
         return group;
     }
 
@@ -221,8 +216,6 @@ public class TileManager : MonoBehaviour
             // Update the tile data in the dictionary
             m_tileDataMap[tilePosition] = tileData;
 
-            // Log the updated health
-            Debug.Log($"{healthToAdd} health has been added to the tile data at position: {tilePosition}. Current health = {tileData.CurrentHealth}");
         }
         else
         {
@@ -259,8 +252,6 @@ public class TileManager : MonoBehaviour
     [Rpc(SendTo.Everyone)]
     private void RemoveTileServerRpc(Vector3Int position)
     {
-        Debug.Log("Remove tile");
-
         // Set tile to null
         m_tilemap.SetTile(position, null);
 
