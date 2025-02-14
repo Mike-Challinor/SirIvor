@@ -316,7 +316,7 @@ public class enemy_Controller : NetworkBehaviour
 
     private void UpdateTileGroupHealth(Vector3Int target)
     {
-        m_tileManager.UpdateTileGroupHealth(m_tileManager.GetTileGroup(target), m_attackDamage);
+        m_tileManager.UpdateTileGroupHealth(m_tileManager.GetTileGroup(target), -m_attackDamage);
     }
 
     // ClientRpc to update the enemy's position on all clients

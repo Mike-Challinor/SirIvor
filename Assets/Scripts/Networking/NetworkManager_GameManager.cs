@@ -10,11 +10,13 @@ public class NetworkManager_GameManager : MonoBehaviour
 {
     [SerializeField] public Dictionary<ulong, PlayerClass> m_playerList = new Dictionary<ulong, PlayerClass>();
     [SerializeField] private List<PlayerData> playerList = new List<PlayerData>();
+    [SerializeField] private List<GameObject> m_playerObjects = new List<GameObject>();
     [SerializeField] private GameObject builderPrefab;
     [SerializeField] private GameObject shooterPrefab;
     [SerializeField] private GameObject m_waveManagerObject;
+    [SerializeField] private GameObject m_quitGameMenu;
     [SerializeField] private NetworkManager_WaveManager m_waveManager;
-
+    [SerializeField] private bool m_gameEnded = false;
     // Class with players data
     [System.Serializable]
     public class PlayerData
@@ -41,6 +43,20 @@ public class NetworkManager_GameManager : MonoBehaviour
 
     // Set a reference for the current games state
     private GameState m_currentGameState = GameState.Default;
+
+    private void Update()
+    {
+        // Check to see if the game has ended
+        if (!m_gameEnded && GetCurrentGameState() == GameState.GameEnded)
+        {
+            // Set the boolean tracker to the game being ended
+            m_gameEnded = !m_gameEnded;
+
+            // Call function to end the game
+            EndGameRpc();
+        }
+    }
+
 
     [Rpc(SendTo.Server)]
     public void AddPlayerRpc(ulong clientId, PlayerClass chosenClass)
@@ -80,11 +96,11 @@ public class NetworkManager_GameManager : MonoBehaviour
     public void StartGameRpc()
     {
         // Notify everyone to load the next scene
-        NotifyClientsToLoadSceneRpc();
+        NotifyClientsToLoadGameSceneRpc();
     }
 
     [Rpc(SendTo.Everyone)]
-    private void NotifyClientsToLoadSceneRpc()
+    private void NotifyClientsToLoadGameSceneRpc()
     {
         // Set the scene string to name
         string nextSceneName = "SampleScene";
@@ -161,9 +177,14 @@ public class NetworkManager_GameManager : MonoBehaviour
             // Spawn the player
             if (playerPrefab != null) // Check that player prefab has been set
             {
-                // Instantiate the object locally and spawn on the network
-                GameObject playerObject = Instantiate(playerPrefab);
-                playerObject.transform.SetParent(playerTransform);
+                // Instantiate the object locally
+                GameObject playerObject = Instantiate(playerPrefab, playerTransform);
+
+                // Add the gameobject to a list (to refer back to when ending the game)
+                m_playerObjects.Add(playerObject);
+                //playerObject.transform.SetParent(playerTransform);
+
+                // Spawn the player object
                 NetworkObject networkObject = playerObject.GetComponent<NetworkObject>();
                 networkObject.SpawnAsPlayerObject(playerData.clientId);
 
@@ -182,5 +203,35 @@ public class NetworkManager_GameManager : MonoBehaviour
     public GameState GetCurrentGameState()
     {
         return m_currentGameState;
+    }
+
+    [Rpc(SendTo.Server)]
+    private void EndGameRpc()
+    {
+        NotifyClientsToLoadEndGameSceneRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void NotifyClientsToLoadEndGameSceneRpc()
+    {
+        foreach (GameObject player in m_playerObjects)
+        {
+            Player_Input_Handler playerInput = player.GetComponent<Player_Input_Handler>();
+
+            if (playerInput != null)
+            {
+                playerInput.SetCanMove(false);
+            }
+        }
+
+        // Set the scene string to name
+        string nextSceneName = "EndGame";
+
+        // Get reference to the network manager script
+        NetworkManager networkManager = GetComponent<NetworkManager>();
+
+        // Load the next scene
+        networkManager.SceneManager.LoadScene(nextSceneName, LoadSceneMode.Additive);
+
     }
 }

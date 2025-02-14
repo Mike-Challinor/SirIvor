@@ -19,6 +19,8 @@ public class PlayerHUD : NetworkBehaviour
     public void initHUD(float max_health)
     {
         Debug.Log("PLAYERHUD::INITHUD:: initHUD function called");
+
+        // Init the slider with 500 max health (for the building)
         slider.GetComponent<HealthbarUI>().InitSlider(max_health);
     }
 
@@ -33,9 +35,13 @@ public class PlayerHUD : NetworkBehaviour
     {
         Debug.Log("PLAYERHUD::SETHUDSTATUS:: SetHUDStatus() function called");
 
+        // If owner set the hud to active
         if (IsOwner)
         {
+            // Set bool that tracks the status of the HUD
             isHUDActive = status;
+
+            // Call the set HUD active function
             SetHUDActive();
         }
 

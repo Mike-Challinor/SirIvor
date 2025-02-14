@@ -48,8 +48,8 @@ namespace NavMeshPlus.Extensions
                 bounds.Encapsulate(lbounds);
                 if (!surface.hideEditorLogs)
                 {
-                    Debug.Log($"From Local Bounds [{tilemap.name}]: {tilemap.localBounds}");
-                    Debug.Log($"To World Bounds: {bounds}");
+                    //Debug.Log($"From Local Bounds [{tilemap.name}]: {tilemap.localBounds}");
+                    //Debug.Log($"To World Bounds: {bounds}");
                 }
             }
             return bounds;

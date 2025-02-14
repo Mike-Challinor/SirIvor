@@ -53,7 +53,7 @@ public class PlayerController : NetworkBehaviour
             else
             {
                 Debug.Log("PLAYERCONTROLLER::START:: Is local player and PlayerHud is not null");
-
+                m_playerHUD.initHUD(500f);
                 StartCoroutine(ShowHUD());
             }
         }
