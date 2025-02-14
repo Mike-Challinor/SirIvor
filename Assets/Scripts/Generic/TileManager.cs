@@ -396,14 +396,18 @@ public class TileManager : MonoBehaviour
         // Sync the health across all tiles in the group
         group.SyncHealthAcrossTiles(m_tileDataMap);
 
-
-        foreach (GameObject player in m_players)
+        // If it is a building group
+        if (group.SharedHealth.MaxHealth == 500)
         {
-            player.GetComponent<PlayerHUD>().updateHealth(group.SharedHealth.CurrentHealth);
+            // Update the health bar for each playerHUD
+            foreach (GameObject player in m_players)
+            {
+                player.GetComponent<PlayerHUD>().updateHealth(group.SharedHealth.CurrentHealth);
+            }
         }
 
         // Check for game over
-        if (group.SharedHealth.CurrentHealth <= 0)
+        if (group.SharedHealth.CurrentHealth <= 0 && group.SharedHealth.MaxHealth == 500)
         {
             m_gameManager.SetCurrentGameState(NetworkManager_GameManager.GameState.GameEnded);
         }

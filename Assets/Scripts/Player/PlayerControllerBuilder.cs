@@ -31,6 +31,8 @@ public class PlayerControllerBuilder : PlayerController
     [SerializeField] private GameObject m_playerHUDLocal;
 
     private UnityEngine.AI.NavMeshAgent m_navMeshAgent;
+    [SerializeField] private GameObject m_navMesh;
+    public NavMeshPlus.Components.NavMeshSurface m_navMeshSurface;
 
     private float lastUpdateTime = 0f;
     private const float updateInterval = 0.05f; // 50ms interval for updates
@@ -71,6 +73,7 @@ public class PlayerControllerBuilder : PlayerController
             m_TilemapArray[0] = m_buildModeTilemap;
         }
 
+        // Initialise the structures tilemap, tilemap array and tile manager
         m_structuresTilemap = GameObject.FindWithTag("StructuresTilemap").GetComponent<Tilemap>();
         m_TilemapArray[1] = m_structuresTilemap;
         m_tileManager = GameObject.FindWithTag("Tilemanager").GetComponent<TileManager>();
@@ -79,6 +82,9 @@ public class PlayerControllerBuilder : PlayerController
         m_navMeshAgent = GetComponent<NavMeshAgent>();
         m_navMeshAgent.updateRotation = false;
         m_navMeshAgent.updateUpAxis = false;
+
+        // Initialise the nav mesh surface
+        m_navMeshSurface = GameObject.FindAnyObjectByType<NavMeshPlus.Components.NavMeshSurface>();
     }
 
 
@@ -158,7 +164,7 @@ public class PlayerControllerBuilder : PlayerController
                         localTileCache[tilePosition] = tile;
 
                         // Sync each tile with the server
-                        SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
+                        SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true, false);
                     }
                 }
 
@@ -167,7 +173,7 @@ public class PlayerControllerBuilder : PlayerController
                     TileBase tile = tilesToPlace[0];
                     m_buildModeTilemap.SetTile(cellPosition, tile);
                     localTileCache[cellPosition] = tile;
-                    SetTileOnServerRpc(cellPosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
+                    SetTileOnServerRpc(cellPosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true, false);
                 }
             }
             else
@@ -239,7 +245,7 @@ public class PlayerControllerBuilder : PlayerController
         else
         {
             // Force synchronization if a desync is detected
-            SyncTilesWithServer();
+            SyncTilesWithServer(false);
         }
     }
 
@@ -308,7 +314,7 @@ public class PlayerControllerBuilder : PlayerController
 
         localTileCache.Clear(); // Clear the tile cache
 
-        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, false);
+        SetTileOnServerRpc(m_buildTileLocation, -1, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, false, false);
         m_canBuild = false;
     }
 
@@ -327,7 +333,7 @@ public class PlayerControllerBuilder : PlayerController
 
             if (tilesToPlace.Length >= 4)  // Ensure there are at least 4 tiles
             {
-                SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, true);
+                SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, true, true);
             }
 
             else
@@ -337,7 +343,7 @@ public class PlayerControllerBuilder : PlayerController
                 localTileCache[m_buildTileLocation] = tile;
 
                 // Sync each tile with the server
-                SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, true);
+                SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, true, true);
             }
 
         }
@@ -455,7 +461,7 @@ public class PlayerControllerBuilder : PlayerController
 
         if (tilesToPlace.Length >= 4)  // Ensure there are at least 4 tiles
         {
-            SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, false);
+            SetMultipleSprites(m_objectTileArray[m_currentSelectedStructure], false, false, false);
         }
         else
         {
@@ -463,7 +469,7 @@ public class PlayerControllerBuilder : PlayerController
             m_buildModeTilemap.SetTile(m_buildTileLocation, tile);
 
             // Sync each tile with the server
-            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false);
+            SetTileOnServerRpc(m_buildTileLocation, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), false, false, false);
         }
     }
 
@@ -484,7 +490,7 @@ public class PlayerControllerBuilder : PlayerController
         m_equippedTile = tile;
     }
 
-    private void SetMultipleSprites(TileBase[] tileArray, bool justOwner, bool isOpaque)
+    private void SetMultipleSprites(TileBase[] tileArray, bool justOwner, bool isOpaque, bool needsRebake)
     {
         TileBase[] tilesToPlace = tileArray;  // Get tile array
 
@@ -506,7 +512,7 @@ public class PlayerControllerBuilder : PlayerController
             localTileCache[tilePosition] = tile;
 
             // Sync each tile with the server
-            SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), justOwner, isOpaque);
+            SetTileOnServerRpc(tilePosition, GetTileIndex(tile), OwnerClientId, GetTilemapIndex(m_structuresTilemap), justOwner, isOpaque, needsRebake);
         }
     }
 
@@ -524,26 +530,26 @@ public class PlayerControllerBuilder : PlayerController
         }
     }
 
-    private void SyncTilesWithServer()
+    private void SyncTilesWithServer(bool needsRebake)
     {
         // Request the server to resend the current state of the tilemap
-        RequestTileSyncServerRpc();
+        RequestTileSyncServerRpc(needsRebake);
     }
 
     [Rpc(SendTo.Server)]
-    private void RequestTileSyncServerRpc()
+    private void RequestTileSyncServerRpc(bool needsRebake)
     {
         // Iterate through all tiles in the current state
         foreach (var position in localTileCache.Keys)
         {
             TileBase tile = localTileCache[position];
             int tileIndex = GetTileIndex(tile);
-            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true);
+            UpdateTileOnClientsRpc(position, tileIndex, OwnerClientId, GetTilemapIndex(m_buildModeTilemap), true, true, needsRebake);
         }
     }
 
     [Rpc(SendTo.Server)]
-    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isopaque)
+    void SetTileOnServerRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isopaque, bool needsRebake)
     {
         if (justOwner) // When the tile should show for just the owner
         {
@@ -576,13 +582,19 @@ public class PlayerControllerBuilder : PlayerController
             }
         }
 
+        if (needsRebake)
+        {
+            // Rebake nav mesh
+            m_navMeshSurface.UpdateNavMesh(m_navMeshSurface.navMeshData);
+        }
+
         // Ensure that the update happens across clients as well
-        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner, isopaque);
+        UpdateTileOnClientsRpc(position, tileIndex, networkObjectId, tilemapindex, justOwner, isopaque, needsRebake);
     }
 
 
     [Rpc(SendTo.NotServer)]
-    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isOpaque)
+    void UpdateTileOnClientsRpc(Vector3Int position, int tileIndex, ulong networkObjectId, int tilemapindex, bool justOwner, bool isOpaque, bool needsRebake)
     {
         if (justOwner) // When the tile should show for just the owner
         {
@@ -622,6 +634,13 @@ public class PlayerControllerBuilder : PlayerController
                 }
             }
         }
+
+        if (needsRebake)
+        {
+            // Rebake nav mesh
+            m_navMeshSurface.UpdateNavMesh(m_navMeshSurface.navMeshData);
+        }
+
     }
 
 
