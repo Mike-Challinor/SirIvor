@@ -646,6 +646,8 @@ MonoBehaviour:
   - {fileID: 0}
   m_buildSprite: {fileID: 585346724093133440}
   m_playerHUDLocal: {fileID: 4979101512543781176}
+  m_navMesh: {fileID: 0}
+  m_navMeshSurface: {fileID: 0}
 --- !u!114 &6081999887275212636
 MonoBehaviour:
   m_ObjectHideFlags: 0
