@@ -100,7 +100,7 @@ public class PlayerHUD : NetworkBehaviour
     private IEnumerator FadeTextTimer(TMP_Text text, bool fadeIn)
     {
         // Delay before starting fade in
-        yield return new WaitForSeconds(1);
+        // yield return new WaitForSeconds(1);
 
         // Reset elapsed time variable
         float elapsedTime = 0f;
